@@ -7,9 +7,9 @@
 echo "PLUGIN TEST";
 if (!defined('ABSPATH')) exit;
 
-require_once plugin_dir_path( __FILE__ ) . 'includes/admin.php';
-require_once plugin_dir_path( __FILE__ ) . 'includes/database.php';
-require_once plugin_dir_path( __FILE__ ) . 'includes/repairs.php';
+require_once plugin_dir_path(__FILE__) . 'includes/admin.php';
+require_once plugin_dir_path(__FILE__) . 'includes/database.php';
+require_once plugin_dir_path(__FILE__) . 'includes/repairs.php';
 
 class RepairCafePlanner {
 

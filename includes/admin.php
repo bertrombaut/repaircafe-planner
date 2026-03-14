@@ -1,33 +1,13 @@
 <?php
 if ( ! defined('ABSPATH') ) exit;
 
-
 /*
 ADMIN MENUS
 */
 
 add_action('admin_menu', 'rcp_admin_menu');
 
-
 function rcp_admin_menu() {
-
-    add_submenu_page(
-        'edit.php?post_type=rc_event',
-        'Aanmeldingen',
-        'Aanmeldingen',
-        'manage_options',
-        'rc_signups',
-        'rcp_admin_signups_page'
-    );
-
-    add_submenu_page(
-        'edit.php?post_type=rc_event',
-        'Instellingen',
-        'Instellingen',
-        'manage_options',
-        'rc_settings',
-        'rcp_settings_page'
-    );
 
     add_submenu_page(
         'edit.php?post_type=rc_event',
@@ -44,26 +24,6 @@ function rcp_admin_menu() {
 /*
 ADMIN PAGES
 */
-
-function rcp_settings_page() {
-
-    echo '<div class="wrap">';
-    echo '<h1>Repair Café instellingen</h1>';
-    echo '<p>Instellingen worden hier later verder uitgewerkt.</p>';
-    echo '</div>';
-
-}
-
-
-function rcp_admin_signups_page() {
-
-    echo '<div class="wrap">';
-    echo '<h1>Aanmeldingen</h1>';
-    echo '<p>Admin pagina tijdelijk actief.</p>';
-    echo '</div>';
-
-}
-
 
 function repaircafe_admin_expertises_page() {
 

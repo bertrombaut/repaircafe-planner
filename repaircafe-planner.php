@@ -560,6 +560,6 @@ class RepairCafePlanner {
         ");
     }
 }
-
+register_activation_hook(__FILE__, 'repaircafe_create_tables');
 new RepairCafePlanner();
 ?>

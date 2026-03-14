@@ -18,8 +18,8 @@ class RepairCafePlanner {
     const OPTION_CONTACT = 'rc_late_unsubscribe_contact';
 
     public function __construct() {
-        register_activation_hook(_FILE_, [$this, 'activate']);
-        register_deactivation_hook(_FILE_, [$this, 'deactivate']);
+        register_activation_hook(__FILE__, [$this, 'activate']);
+        register_deactivation_hook(__FILE__, [$this, 'deactivate']);
 
         add_action('init', [$this, 'register_post_type']);
         add_action('add_meta_boxes', [$this, 'add_metaboxes']);

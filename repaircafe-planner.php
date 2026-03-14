@@ -4,7 +4,7 @@
  * Description: Repair Café agenda + vrijwilligers (login) + aanmelden/afmelden (24u regel) + max vrijwilligers per event + instellingen.
  * Version: 2.3.0
  */
-
+echo "PLUGIN TEST";
 if (!defined('ABSPATH')) exit;
 
 require_once plugin_dir_path(_FILE_) . 'includes/admin.php';

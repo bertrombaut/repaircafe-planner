@@ -1,6 +1,11 @@
 <?php
 if ( ! defined('ABSPATH') ) exit;
 
+
+/*
+ADMIN MENUS
+*/
+
 add_action('admin_menu', 'rcp_admin_menu');
 add_action('admin_menu', 'repaircafe_admin_menu');
 
@@ -46,16 +51,20 @@ function repaircafe_admin_menu() {
         'Reparatiedagen',
         'read',
         'repaircafe',
-        'repaircafe',
         'repaircafe_admin_events_page'
     );
 
 }
 
 
+/*
+ADMIN PAGES
+*/
+
 function rcp_settings_page() {
 
-    echo '<div class="wrap"><h1>Repair Café instellingen</h1>';
+    echo '<div class="wrap">';
+    echo '<h1>Repair Café instellingen</h1>';
     echo '<p>Instellingen worden hier later verder uitgewerkt.</p>';
     echo '</div>';
 
@@ -64,7 +73,8 @@ function rcp_settings_page() {
 
 function rcp_admin_signups_page() {
 
-    echo '<div class="wrap"><h1>Aanmeldingen</h1>';
+    echo '<div class="wrap">';
+    echo '<h1>Aanmeldingen</h1>';
     echo '<p>Admin pagina tijdelijk actief.</p>';
     echo '</div>';
 

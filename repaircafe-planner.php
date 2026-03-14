@@ -2,7 +2,7 @@
 /**
  * Plugin Name: RepairCafe Planner
  * Description: Repair Café agenda + vrijwilligers (login) + aanmelden/afmelden (24u regel) + max vrijwilligers per event + instellingen.
- * Version: 2.3.0
+ * Version: 2.3.1
  */
 
 if (!defined('ABSPATH')) exit;

@@ -9,6 +9,8 @@ if (!defined('ABSPATH')) exit;
 
 require_once plugin_dir_path(__FILE__) . 'includes/admin.php';
 
+require_once plugin_dir_path(_FILE_) . 'includes/database.php';
+
 class RepairCafePlanner {
 
     const TABLE = 'rc_signups';

@@ -11,6 +11,8 @@ require_once plugin_dir_path(__FILE__) . 'includes/admin.php';
 
 require_once plugin_dir_path(_FILE_) . 'includes/database.php';
 
+register_activation_hook(__FILE__, 'repaircafe_create_planner_table');
+
 class RepairCafePlanner {
 
     const TABLE = 'rc_signups';

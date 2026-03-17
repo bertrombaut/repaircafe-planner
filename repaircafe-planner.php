@@ -516,6 +516,26 @@ class RepairCafePlanner {
             }
 
             $out .= "<div>" . wpautop(wp_kses_post(get_the_content())) . "</div>";
+
+            $signups = $wpdb->get_results($wpdb->prepare(
+    "SELECT u.display_name
+     FROM {$this->table_name()} s
+     LEFT JOIN {$wpdb->users} u ON s.user_id = u.ID
+     WHERE s.event_id = %d
+     ORDER BY s.created_at ASC",
+    $id
+));
+
+if ($signups) {
+    $out .= "<div class='rc-signups'><strong>Aangemeld:</strong><ul>";
+
+    foreach ($signups as $s) {
+        $out .= "<li>" . esc_html($s->display_name) . "</li>";
+    }
+
+    $out .= "</ul></div>";
+}
+            
             $out .= "<div class='rc-actions'>" . $this->render_buttons($id) . "</div>";
             $out .= "</div>";
         }

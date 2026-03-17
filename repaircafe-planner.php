@@ -29,7 +29,6 @@ class RepairCafePlanner {
         add_action('admin_menu', [$this, 'admin_menu']);
         add_action('admin_init', [$this, 'register_settings']);
         add_shortcode('repaircafe_events', [$this, 'shortcode_events']);
-        add_shortcode('repaircafe_events', [$this, 'shortcode_events']);
         add_shortcode('rc_my_signups', [$this, 'shortcode_my_signups']);
 
         add_action('wp_enqueue_scripts', [$this, 'enqueue_styles']);

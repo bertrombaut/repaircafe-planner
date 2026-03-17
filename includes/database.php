@@ -13,7 +13,7 @@ function repaircafe_create_tables() {
 
     $sql = [];
 
-    // Algemene lijst met expertises, geldig voor alle events
+    // Expertises (globaal)
     $sql[] = "CREATE TABLE $expertises_table (
         id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
         name VARCHAR(100) NOT NULL,
@@ -22,7 +22,7 @@ function repaircafe_create_tables() {
         UNIQUE KEY name (name)
     ) $charset_collate;";
 
-    // Welke expertises een vrijwilliger heeft
+    // User expertises
     $sql[] = "CREATE TABLE $user_expertises_tbl (
         id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
         user_id BIGINT UNSIGNED NOT NULL,
@@ -34,8 +34,7 @@ function repaircafe_create_tables() {
         KEY expertise_id (expertise_id)
     ) $charset_collate;";
 
-    // Welke expertises actief zijn per event + max vrijwilligers per expertise
-    // Let op: event_id verwijst naar jouw bestaande rc_event post ID
+    // Event expertises + max
     $sql[] = "CREATE TABLE $event_expertises_tbl (
         id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
         event_id BIGINT UNSIGNED NOT NULL,

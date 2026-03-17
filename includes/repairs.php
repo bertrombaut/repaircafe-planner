@@ -200,17 +200,7 @@ function repaircafe_get_user_expertise_names( $user_id ) {
 USER PROFILE: expertises koppelen aan vrijwilligers
 */
 
-add_action('show_user_profile', 'repaircafe_render_user_expertises_field');
-add_action('edit_user_profile', 'repaircafe_render_user_expertises_field');
-add_action('personal_options_update', 'repaircafe_save_user_expertises_field');
-add_action('edit_user_profile_update', 'repaircafe_save_user_expertises_field');
 
-
-function repaircafe_render_user_expertises_field( $user ) {
-
-    if ( ! $user || ! isset($user->ID) ) {
-        return;
-    }
 
     if ( ! current_user_can('edit_user', $user->ID) ) {
         return;

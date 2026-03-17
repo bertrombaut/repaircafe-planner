@@ -43,7 +43,6 @@ class RepairCafePlanner {
     public function activate() {
         $this->create_table();
 
-        // Nieuwe planner-tabellen uit includes/database.php
         if (function_exists('repaircafe_create_tables')) {
             repaircafe_create_tables();
         }
@@ -84,11 +83,42 @@ class RepairCafePlanner {
     }
 
     public function register_post_type() {
+        $labels = [
+            'name'                  => 'Repair Cafés',
+            'singular_name'         => 'Evenement',
+            'menu_name'             => 'Repair Cafés',
+            'name_admin_bar'        => 'Evenement',
+            'add_new'               => 'Evenement toevoegen',
+            'add_new_item'          => 'Nieuw evenement toevoegen',
+            'edit_item'             => 'Evenement bewerken',
+            'new_item'              => 'Nieuw evenement',
+            'view_item'             => 'Evenement bekijken',
+            'view_items'            => 'Evenementen bekijken',
+            'search_items'          => 'Evenementen zoeken',
+            'not_found'             => 'Geen evenementen gevonden',
+            'not_found_in_trash'    => 'Geen evenementen gevonden in de prullenbak',
+            'all_items'             => 'Evenementen',
+            'archives'              => 'Evenement archief',
+            'attributes'            => 'Evenement eigenschappen',
+            'insert_into_item'      => 'In evenement invoegen',
+            'uploaded_to_this_item' => 'Geüpload naar dit evenement',
+            'featured_image'        => 'Uitgelichte afbeelding',
+            'set_featured_image'    => 'Uitgelichte afbeelding instellen',
+            'remove_featured_image' => 'Uitgelichte afbeelding verwijderen',
+            'use_featured_image'    => 'Als uitgelichte afbeelding gebruiken',
+            'filter_items_list'     => 'Evenementenlijst filteren',
+            'items_list_navigation' => 'Evenementenlijst navigatie',
+            'items_list'            => 'Evenementenlijst',
+            'item_published'        => 'Evenement gepubliceerd',
+            'item_updated'          => 'Evenement bijgewerkt',
+        ];
+
         register_post_type('rc_event', [
-            'label' => 'Repair Cafés',
+            'labels' => $labels,
             'public' => true,
             'menu_icon' => 'dashicons-hammer',
             'supports' => ['title', 'editor'],
+            'show_in_rest' => false,
         ]);
     }
 
@@ -619,6 +649,9 @@ class RepairCafePlanner {
             .rc-note{display:inline-block;padding:10px;border:1px solid #ddd;border-radius:10px;background:#fff;color:#333;}
         ");
     }
+}
+
+new RepairCafePlanner();
 }
 
 new RepairCafePlanner();

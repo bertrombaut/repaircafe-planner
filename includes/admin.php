@@ -57,9 +57,7 @@ function repaircafe_admin_expertises_page() {
             } else {
                 $inserted = $wpdb->insert(
                     $table,
-                    array(
-                        'name' => $name,
-                    ),
+                    array('name' => $name),
                     array('%s')
                 );
 
@@ -79,23 +77,9 @@ function repaircafe_admin_expertises_page() {
     ) {
         $expertise_id = absint($_GET['delete_expertise']);
 
-        $wpdb->delete(
-            $table,
-            array('id' => $expertise_id),
-            array('%d')
-        );
-
-        $wpdb->delete(
-            $wpdb->prefix . 'rcp_user_expertises',
-            array('expertise_id' => $expertise_id),
-            array('%d')
-        );
-
-        $wpdb->delete(
-            $wpdb->prefix . 'rcp_event_expertises',
-            array('expertise_id' => $expertise_id),
-            array('%d')
-        );
+        $wpdb->delete($table, ['id' => $expertise_id], ['%d']);
+        $wpdb->delete($wpdb->prefix . 'rcp_user_expertises', ['expertise_id' => $expertise_id], ['%d']);
+        $wpdb->delete($wpdb->prefix . 'rcp_event_expertises', ['expertise_id' => $expertise_id], ['%d']);
 
         echo '<div class="notice notice-success"><p>Expertise verwijderd.</p></div>';
     }
@@ -104,52 +88,22 @@ function repaircafe_admin_expertises_page() {
 
     echo '<div class="wrap">';
     echo '<h1>Expertises</h1>';
-    echo '<p>Hier beheer je de vaste lijst met expertises voor alle komende evenementen.</p>';
 
-    echo '<h2>Nieuwe expertise</h2>';
     echo '<form method="post">';
     wp_nonce_field('repaircafe_add_expertise', 'repaircafe_expertise_nonce');
 
-    echo '<table class="form-table">';
-    echo '<tr>';
-    echo '<th>Naam</th>';
-    echo '<td><input type="text" name="expertise_name" class="regular-text" required placeholder="Bijv. Elektra"></td>';
-    echo '</tr>';
-    echo '</table>';
-
-    echo '<p><button type="submit" name="repaircafe_add_expertise" class="button button-primary">Toevoegen</button></p>';
+    echo '<input type="text" name="expertise_name" placeholder="Nieuwe expertise" required>';
+    echo '<button type="submit" name="repaircafe_add_expertise" class="button button-primary">Toevoegen</button>';
     echo '</form>';
 
     echo '<hr>';
 
-    echo '<h2>Bestaande expertises</h2>';
-
     if ( empty($expertises) ) {
-        echo '<p>Nog geen expertises toegevoegd.</p>';
+        echo '<p>Geen expertises.</p>';
     } else {
-        echo '<table class="widefat striped">';
-        echo '<thead>';
-        echo '<tr>';
-        echo '<th>Naam</th>';
-        echo '<th style="width:140px;">Actie</th>';
-        echo '</tr>';
-        echo '</thead>';
-        echo '<tbody>';
-
-        foreach ( $expertises as $expertise ) {
-            $delete_url = wp_nonce_url(
-                admin_url('edit.php?post_type=rc_event&page=repaircafe_expertises&delete_expertise=' . $expertise->id),
-                'repaircafe_delete_expertise_' . $expertise->id
-            );
-
-            echo '<tr>';
-            echo '<td>' . esc_html($expertise->name) . '</td>';
-            echo '<td><a href="' . esc_url($delete_url) . '" onclick="return confirm(\'Expertise verwijderen?\')">Verwijderen</a></td>';
-            echo '</tr>';
+        foreach ($expertises as $exp) {
+            echo '<p>' . esc_html($exp->name) . '</p>';
         }
-
-        echo '</tbody>';
-        echo '</table>';
     }
 
     echo '</div>';
@@ -157,122 +111,7 @@ function repaircafe_admin_expertises_page() {
 
 
 /*
-EVENT METABOX: EXPERTISES PER EVENEMENT
-*/
-
-add_action('add_meta_boxes', 'rcp_add_event_expertises_metabox');
-
-function rcp_add_event_expertises_metabox() {
-    add_meta_box(
-        'rcp_event_expertises_metabox',
-        'Expertises voor dit evenement',
-        'rcp_render_event_expertises_metabox',
-        'rc_event',
-        'side',
-        'default'
-    );
-}
-
-function rcp_render_event_expertises_metabox($post) {
-    wp_nonce_field('rcp_save_event_expertises', 'rcp_event_expertises_nonce');
-
-    global $wpdb;
-
-    $expertises_table = $wpdb->prefix . 'rcp_expertises';
-    $event_expertises_table = $wpdb->prefix . 'rcp_event_expertises';
-
-    $expertises = $wpdb->get_results("SELECT * FROM $expertises_table ORDER BY name ASC");
-
-    $selected_ids = $wpdb->get_col(
-        $wpdb->prepare(
-            "SELECT expertise_id FROM $event_expertises_table WHERE event_id = %d",
-            $post->ID
-        )
-    );
-
-    if ( empty($expertises) ) {
-        echo '<p>Er zijn nog geen expertises aangemaakt.</p>';
-        echo '<p>Voeg die eerst toe via het menu <strong>Expertises</strong>.</p>';
-        return;
-    }
-
-    echo '<p>Vink aan welke expertises nodig of beschikbaar zijn voor dit evenement.</p>';
-
-    foreach ( $expertises as $expertise ) {
-        echo '<p style="margin:0 0 8px;">';
-        echo '<label>';
-        echo '<input type="checkbox" name="rcp_event_expertises[]" value="' . esc_attr($expertise->id) . '" ' . checked(in_array($expertise->id, $selected_ids), true, false) . '> ';
-        echo esc_html($expertise->name);
-        echo '</label>';
-        echo '</p>';
-    }
-}
-
-
-/*
-SAVE EVENT EXPERTISES
-*/
-
-add_action('save_post', 'rcp_save_event_expertises');
-
-function rcp_save_event_expertises($post_id) {
-
-    if ( get_post_type($post_id) !== 'rc_event' ) {
-        return;
-    }
-
-    if ( ! isset($_POST['rcp_event_expertises_nonce']) ) {
-        return;
-    }
-
-    if ( ! wp_verify_nonce($_POST['rcp_event_expertises_nonce'], 'rcp_save_event_expertises') ) {
-        return;
-    }
-
-    if ( defined('DOING_AUTOSAVE') && DOING_AUTOSAVE ) {
-        return;
-    }
-
-    if ( wp_is_post_revision($post_id) ) {
-        return;
-    }
-
-    if ( ! current_user_can('edit_post', $post_id) ) {
-        return;
-    }
-
-    global $wpdb;
-
-    $event_expertises_table = $wpdb->prefix . 'rcp_event_expertises';
-
-    $wpdb->delete(
-        $event_expertises_table,
-        array('event_id' => $post_id),
-        array('%d')
-    );
-
-    if ( isset($_POST['rcp_event_expertises']) && is_array($_POST['rcp_event_expertises']) ) {
-        $expertise_ids = array_map('absint', $_POST['rcp_event_expertises']);
-        $expertise_ids = array_unique($expertise_ids);
-
-        foreach ( $expertise_ids as $expertise_id ) {
-            if ( $expertise_id > 0 ) {
-                $wpdb->insert(
-                    $event_expertises_table,
-                    array(
-                        'event_id'     => $post_id,
-                        'expertise_id' => $expertise_id,
-                    ),
-                    array('%d', '%d')
-                );
-            }
-        }
-    }
-}
-/*
-|--------------------------------------------------------------------------
-| Expertises per gebruiker (vrijwilliger)
-|--------------------------------------------------------------------------
+USER EXPERTISES
 */
 
 add_action('show_user_profile', 'rcp_user_expertises_field');
@@ -282,35 +121,18 @@ function rcp_user_expertises_field($user) {
 
     global $wpdb;
 
-    $expertises_table = $wpdb->prefix . 'rcp_expertises';
-    $user_expertises_table = $wpdb->prefix . 'rcp_user_expertises';
-
-    $expertises = $wpdb->get_results("SELECT id, name FROM $expertises_table ORDER BY name ASC");
-
-    $selected = $wpdb->get_col(
-        $wpdb->prepare(
-            "SELECT expertise_id FROM $user_expertises_table WHERE user_id = %d",
-            $user->ID
-        )
-    );
+    $expertises = $wpdb->get_results("SELECT id, name FROM {$wpdb->prefix}rcp_expertises ORDER BY name ASC");
+    $selected = $wpdb->get_col($wpdb->prepare(
+        "SELECT expertise_id FROM {$wpdb->prefix}rcp_user_expertises WHERE user_id = %d",
+        $user->ID
+    ));
 
     echo '<h2>Expertises</h2>';
-    echo '<table class="form-table"><tr><th>Vaardigheden</th><td>';
 
-    if ( empty($expertises) ) {
-        echo '<p>Geen expertises beschikbaar.</p>';
-    } else {
-        foreach ( $expertises as $exp ) {
-            $checked = in_array($exp->id, $selected) ? 'checked' : '';
-
-            echo '<label style="display:block;margin-bottom:6px;">';
-            echo '<input type="checkbox" name="rcp_user_expertises[]" value="' . esc_attr($exp->id) . '" ' . $checked . '> ';
-            echo esc_html($exp->name);
-            echo '</label>';
-        }
+    foreach ($expertises as $exp) {
+        $checked = in_array($exp->id, $selected) ? 'checked' : '';
+        echo '<label><input type="checkbox" name="rcp_user_expertises[]" value="' . esc_attr($exp->id) . '" ' . $checked . '> ' . esc_html($exp->name) . '</label><br>';
     }
-
-    echo '</td></tr></table>';
 }
 
 add_action('personal_options_update', 'rcp_save_user_expertises');
@@ -318,35 +140,19 @@ add_action('edit_user_profile_update', 'rcp_save_user_expertises');
 
 function rcp_save_user_expertises($user_id) {
 
-    if ( ! current_user_can('edit_user', $user_id) ) {
-        return;
-    }
+    if ( ! current_user_can('edit_user', $user_id) ) return;
 
     global $wpdb;
-
     $table = $wpdb->prefix . 'rcp_user_expertises';
 
-    $wpdb->delete(
-        $table,
-        array('user_id' => $user_id),
-        array('%d')
-    );
+    $wpdb->delete($table, ['user_id' => $user_id], ['%d']);
 
-    if ( isset($_POST['rcp_user_expertises']) && is_array($_POST['rcp_user_expertises']) ) {
-
-        $expertise_ids = array_map('intval', $_POST['rcp_user_expertises']);
-
-        foreach ( $expertise_ids as $exp_id ) {
-            if ( $exp_id > 0 ) {
-                $wpdb->insert(
-                    $table,
-                    array(
-                        'user_id' => $user_id,
-                        'expertise_id' => $exp_id
-                    ),
-                    array('%d', '%d')
-                );
-            }
+    if (!empty($_POST['rcp_user_expertises'])) {
+        foreach ($_POST['rcp_user_expertises'] as $exp_id) {
+            $wpdb->insert($table, [
+                'user_id' => $user_id,
+                'expertise_id' => (int)$exp_id
+            ]);
         }
     }
 }

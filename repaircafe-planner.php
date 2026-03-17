@@ -690,12 +690,29 @@ class RepairCafePlanner {
             }
 
             echo '<div><strong>Aanmeldingen:</strong> ' . esc_html($count) . ($max !== null ? ' / ' . esc_html($max) : '') . '</div>';
-
+if ($expertise_counts) {
+    echo '<ul style="margin:6px 0 0 15px;">';
+    foreach ($expertise_counts as $exp) {
+        echo '<li>' . esc_html($exp->name) . ': ' . esc_html($exp->count) . '/' . esc_html($exp->max_volunteers) . '</li>';
+    }
+    echo '</ul>';
+}
             $rows = $wpdb->get_results($wpdb->prepare(
                 "SELECT user_id, created_at FROM $table WHERE event_id = %d ORDER BY created_at ASC",
                 $event_id
             ));
-
+$expertise_counts = $wpdb->get_results($wpdb->prepare(
+    "SELECT ee.expertise_id, e.name, ee.max_volunteers,
+            COUNT(s.user_id) as count
+     FROM {$wpdb->prefix}rcp_event_expertises ee
+     LEFT JOIN {$wpdb->prefix}rcp_expertises e ON ee.expertise_id = e.id
+     LEFT JOIN {$wpdb->prefix}rcp_user_expertises ue ON ue.expertise_id = ee.expertise_id
+     LEFT JOIN {$table} s 
+        ON s.user_id = ue.user_id AND s.event_id = ee.event_id
+     WHERE ee.event_id = %d
+     GROUP BY ee.expertise_id",
+    $event_id
+));
             if (!$rows) {
                 echo '<div style="margin-top:8px;color:#666;">(Nog geen aanmeldingen)</div>';
             } else {

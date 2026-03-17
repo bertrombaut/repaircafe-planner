@@ -2,7 +2,7 @@
 /**
  * Plugin Name: RepairCafe Planner
  * Description: Repair Café agenda + vrijwilligers (login) + aanmelden/afmelden (24u regel) + max vrijwilligers per event + instellingen.
- * Version: 2.3.1
+ * Version: 2.3.2
  */
 
 if (!defined('ABSPATH')) exit;
@@ -142,6 +142,7 @@ class RepairCafePlanner {
         add_meta_box('rc_event_datetime', 'Event datum & tijd', [$this, 'render_datetime_metabox'], 'rc_event', 'side');
         add_meta_box('rc_event_location', 'Locatie', [$this, 'render_location_metabox'], 'rc_event', 'side');
         add_meta_box('rc_event_limits', 'Vrijwilligers', [$this, 'render_limits_metabox'], 'rc_event', 'side');
+        add_meta_box('rc_event_expertises', 'Expertises per evenement', [$this, 'render_event_expertises_metabox'], 'rc_event', 'normal', 'default');
     }
 
     public function render_datetime_metabox($post) {
@@ -180,7 +181,61 @@ class RepairCafePlanner {
         echo '<p style="margin:8px 0 0;color:#666;font-size:12px;">Leeg = geen limiet.</p>';
     }
 
+    public function render_event_expertises_metabox($post) {
+        global $wpdb;
+
+        $expertises_table     = $wpdb->prefix . 'rcp_expertises';
+        $event_expertises_tbl = $wpdb->prefix . 'rcp_event_expertises';
+
+        $expertises = $wpdb->get_results("SELECT id, name FROM {$expertises_table} ORDER BY name ASC");
+
+        if (empty($expertises)) {
+            echo '<p>Er zijn nog geen expertises aangemaakt. Voeg die eerst toe via Repair Cafés → Expertises.</p>';
+            return;
+        }
+
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT expertise_id, max_volunteers
+                 FROM {$event_expertises_tbl}
+                 WHERE event_id = %d",
+                $post->ID
+            )
+        );
+
+        $selected = [];
+        foreach ($rows as $row) {
+            $selected[(int) $row->expertise_id] = (int) $row->max_volunteers;
+        }
+
+        echo '<p>Kies welke expertises nodig zijn voor dit evenement en geef per expertise het maximum aantal vrijwilligers op.</p>';
+        echo '<table class="widefat striped" style="max-width:700px;">';
+        echo '<thead><tr><th>Actief</th><th>Expertise</th><th>Max vrijwilligers</th></tr></thead>';
+        echo '<tbody>';
+
+        foreach ($expertises as $expertise) {
+            $expertise_id = (int) $expertise->id;
+            $is_checked   = array_key_exists($expertise_id, $selected);
+            $max_value    = $is_checked ? (int) $selected[$expertise_id] : 1;
+
+            echo '<tr>';
+            echo '<td style="width:90px;">';
+            echo '<input type="checkbox" name="rc_event_expertises[' . esc_attr($expertise_id) . '][enabled]" value="1" ' . checked($is_checked, true, false) . '>';
+            echo '</td>';
+            echo '<td>' . esc_html($expertise->name) . '</td>';
+            echo '<td style="width:180px;">';
+            echo '<input type="number" min="1" step="1" name="rc_event_expertises[' . esc_attr($expertise_id) . '][max]" value="' . esc_attr($max_value) . '" style="width:100px;">';
+            echo '</td>';
+            echo '</tr>';
+        }
+
+        echo '</tbody>';
+        echo '</table>';
+    }
+
     public function save_event_meta($post_id) {
+        global $wpdb;
+
         if (get_post_type($post_id) !== 'rc_event') return;
         if (!isset($_POST['rc_event_nonce']) || !wp_verify_nonce($_POST['rc_event_nonce'], 'rc_save_event_meta')) return;
         if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
@@ -198,6 +253,37 @@ class RepairCafePlanner {
         } else {
             $max = max(0, (int) $raw);
             update_post_meta($post_id, '_rc_max_volunteers', $max);
+        }
+
+        $event_expertises_tbl = $wpdb->prefix . 'rcp_event_expertises';
+        $wpdb->delete(
+            $event_expertises_tbl,
+            ['event_id' => (int) $post_id],
+            ['%d']
+        );
+
+        $submitted_expertises = isset($_POST['rc_event_expertises']) && is_array($_POST['rc_event_expertises'])
+            ? $_POST['rc_event_expertises']
+            : [];
+
+        foreach ($submitted_expertises as $expertise_id => $data) {
+            $expertise_id = (int) $expertise_id;
+            $enabled      = isset($data['enabled']) ? 1 : 0;
+            $max          = isset($data['max']) ? max(1, (int) $data['max']) : 1;
+
+            if (!$enabled || $expertise_id <= 0) {
+                continue;
+            }
+
+            $wpdb->insert(
+                $event_expertises_tbl,
+                [
+                    'event_id'       => (int) $post_id,
+                    'expertise_id'   => $expertise_id,
+                    'max_volunteers' => $max,
+                ],
+                ['%d', '%d', '%d']
+            );
         }
     }
 
@@ -511,7 +597,7 @@ class RepairCafePlanner {
             $url = add_query_arg([
                 'rc_action' => 'signup',
                 'event_id'  => $event_id,
-                'wpnonce'  => wp_create_nonce('rc_signup' . $event_id),
+                '_wpnonce'  => wp_create_nonce('rc_signup_' . $event_id),
             ], home_url('/'));
 
             return '<a class="rc-btn" href="' . esc_url($url) . '">Aanmelden</a>';
@@ -525,7 +611,7 @@ class RepairCafePlanner {
         $url = add_query_arg([
             'rc_action' => 'unsubscribe',
             'event_id'  => $event_id,
-            'wpnonce'  => wp_create_nonce('rc_unsubscribe' . $event_id),
+            '_wpnonce'  => wp_create_nonce('rc_unsubscribe_' . $event_id),
         ], home_url('/'));
 
         return '<a class="rc-btn rc-btn-secondary" href="' . esc_url($url) . '">Afmelden</a>';

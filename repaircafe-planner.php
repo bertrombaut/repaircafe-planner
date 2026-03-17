@@ -454,6 +454,7 @@ class RepairCafePlanner {
 
     /* -------------------- Shortcodes -------------------- */
     public function shortcode_events() {
+        global $wpdb;
         $today = date('Y-m-d');
 
         $out = '';

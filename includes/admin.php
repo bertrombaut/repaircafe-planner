@@ -154,3 +154,118 @@ function repaircafe_admin_expertises_page() {
 
     echo '</div>';
 }
+
+
+/*
+EVENT METABOX: EXPERTISES PER EVENEMENT
+*/
+
+add_action('add_meta_boxes', 'rcp_add_event_expertises_metabox');
+
+function rcp_add_event_expertises_metabox() {
+    add_meta_box(
+        'rcp_event_expertises_metabox',
+        'Expertises voor dit evenement',
+        'rcp_render_event_expertises_metabox',
+        'rc_event',
+        'side',
+        'default'
+    );
+}
+
+function rcp_render_event_expertises_metabox($post) {
+    wp_nonce_field('rcp_save_event_expertises', 'rcp_event_expertises_nonce');
+
+    global $wpdb;
+
+    $expertises_table = $wpdb->prefix . 'rcp_expertises';
+    $event_expertises_table = $wpdb->prefix . 'rcp_event_expertises';
+
+    $expertises = $wpdb->get_results("SELECT * FROM $expertises_table ORDER BY name ASC");
+
+    $selected_ids = $wpdb->get_col(
+        $wpdb->prepare(
+            "SELECT expertise_id FROM $event_expertises_table WHERE event_id = %d",
+            $post->ID
+        )
+    );
+
+    if ( empty($expertises) ) {
+        echo '<p>Er zijn nog geen expertises aangemaakt.</p>';
+        echo '<p>Voeg die eerst toe via het menu <strong>Expertises</strong>.</p>';
+        return;
+    }
+
+    echo '<p>Vink aan welke expertises nodig of beschikbaar zijn voor dit evenement.</p>';
+
+    foreach ( $expertises as $expertise ) {
+        echo '<p style="margin:0 0 8px;">';
+        echo '<label>';
+        echo '<input type="checkbox" name="rcp_event_expertises[]" value="' . esc_attr($expertise->id) . '" ' . checked(in_array($expertise->id, $selected_ids), true, false) . '> ';
+        echo esc_html($expertise->name);
+        echo '</label>';
+        echo '</p>';
+    }
+}
+
+
+/*
+SAVE EVENT EXPERTISES
+*/
+
+add_action('save_post', 'rcp_save_event_expertises');
+
+function rcp_save_event_expertises($post_id) {
+
+    if ( get_post_type($post_id) !== 'rc_event' ) {
+        return;
+    }
+
+    if ( ! isset($_POST['rcp_event_expertises_nonce']) ) {
+        return;
+    }
+
+    if ( ! wp_verify_nonce($_POST['rcp_event_expertises_nonce'], 'rcp_save_event_expertises') ) {
+        return;
+    }
+
+    if ( defined('DOING_AUTOSAVE') && DOING_AUTOSAVE ) {
+        return;
+    }
+
+    if ( wp_is_post_revision($post_id) ) {
+        return;
+    }
+
+    if ( ! current_user_can('edit_post', $post_id) ) {
+        return;
+    }
+
+    global $wpdb;
+
+    $event_expertises_table = $wpdb->prefix . 'rcp_event_expertises';
+
+    $wpdb->delete(
+        $event_expertises_table,
+        array('event_id' => $post_id),
+        array('%d')
+    );
+
+    if ( isset($_POST['rcp_event_expertises']) && is_array($_POST['rcp_event_expertises']) ) {
+        $expertise_ids = array_map('absint', $_POST['rcp_event_expertises']);
+        $expertise_ids = array_unique($expertise_ids);
+
+        foreach ( $expertise_ids as $expertise_id ) {
+            if ( $expertise_id > 0 ) {
+                $wpdb->insert(
+                    $event_expertises_table,
+                    array(
+                        'event_id'     => $post_id,
+                        'expertise_id' => $expertise_id,
+                    ),
+                    array('%d', '%d')
+                );
+            }
+        }
+    }
+}

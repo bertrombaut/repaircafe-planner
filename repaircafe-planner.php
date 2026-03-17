@@ -652,6 +652,3 @@ class RepairCafePlanner {
 }
 
 new RepairCafePlanner();
-}
-
-new RepairCafePlanner();

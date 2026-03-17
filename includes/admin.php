@@ -269,3 +269,84 @@ function rcp_save_event_expertises($post_id) {
         }
     }
 }
+/*
+|--------------------------------------------------------------------------
+| Expertises per gebruiker (vrijwilliger)
+|--------------------------------------------------------------------------
+*/
+
+add_action('show_user_profile', 'rcp_user_expertises_field');
+add_action('edit_user_profile', 'rcp_user_expertises_field');
+
+function rcp_user_expertises_field($user) {
+
+    global $wpdb;
+
+    $expertises_table = $wpdb->prefix . 'rcp_expertises';
+    $user_expertises_table = $wpdb->prefix . 'rcp_user_expertises';
+
+    $expertises = $wpdb->get_results("SELECT id, name FROM $expertises_table ORDER BY name ASC");
+
+    $selected = $wpdb->get_col(
+        $wpdb->prepare(
+            "SELECT expertise_id FROM $user_expertises_table WHERE user_id = %d",
+            $user->ID
+        )
+    );
+
+    echo '<h2>Expertises</h2>';
+    echo '<table class="form-table"><tr><th>Vaardigheden</th><td>';
+
+    if ( empty($expertises) ) {
+        echo '<p>Geen expertises beschikbaar.</p>';
+    } else {
+        foreach ( $expertises as $exp ) {
+            $checked = in_array($exp->id, $selected) ? 'checked' : '';
+
+            echo '<label style="display:block;margin-bottom:6px;">';
+            echo '<input type="checkbox" name="rcp_user_expertises[]" value="' . esc_attr($exp->id) . '" ' . $checked . '> ';
+            echo esc_html($exp->name);
+            echo '</label>';
+        }
+    }
+
+    echo '</td></tr></table>';
+}
+
+add_action('personal_options_update', 'rcp_save_user_expertises');
+add_action('edit_user_profile_update', 'rcp_save_user_expertises');
+
+function rcp_save_user_expertises($user_id) {
+
+    if ( ! current_user_can('edit_user', $user_id) ) {
+        return;
+    }
+
+    global $wpdb;
+
+    $table = $wpdb->prefix . 'rcp_user_expertises';
+
+    $wpdb->delete(
+        $table,
+        array('user_id' => $user_id),
+        array('%d')
+    );
+
+    if ( isset($_POST['rcp_user_expertises']) && is_array($_POST['rcp_user_expertises']) ) {
+
+        $expertise_ids = array_map('intval', $_POST['rcp_user_expertises']);
+
+        foreach ( $expertise_ids as $exp_id ) {
+            if ( $exp_id > 0 ) {
+                $wpdb->insert(
+                    $table,
+                    array(
+                        'user_id' => $user_id,
+                        'expertise_id' => $exp_id
+                    ),
+                    array('%d', '%d')
+                );
+            }
+        }
+    }
+}

@@ -967,12 +967,7 @@ class RepairCafePlanner {
                     echo '</li>';
                 }
 
-                    if ($expertise) {
-                        $name .= ' (' . $expertise . ')';
-                    }
-
-                    echo '<li>' . esc_html($name) . ' <span style="color:#666;">(' . esc_html($u->user_email) . ')</span></li>';
-                }
+                    
                 echo '</ol>';
             }
 

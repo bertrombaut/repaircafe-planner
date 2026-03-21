@@ -477,7 +477,7 @@ class RepairCafePlanner {
         return (int) $wpdb->get_var($sql);
     }
 
-        private function do_signup($event_id, $user_id) {
+    private function do_signup($event_id, $user_id, $expertise_id = 0) {
         global $wpdb;
         $table = $this->table_name();
 
@@ -489,7 +489,7 @@ class RepairCafePlanner {
             return false;
         }
 
-        $block_reason = $this->get_signup_block_reason($event_id, $user_id);
+        $block_reason = $this->get_signup_block_reason($event_id, $user_id, $expertise_id);
         if ($block_reason !== '') {
             return false;
         }
@@ -497,11 +497,12 @@ class RepairCafePlanner {
         $res = $wpdb->insert(
             $table,
             [
-                'event_id'   => (int) $event_id,
-                'user_id'    => (int) $user_id,
-                'created_at' => current_time('mysql'),
+                'event_id'     => (int) $event_id,
+                'user_id'      => (int) $user_id,
+                'expertise_id' => (int) $expertise_id,
+                'created_at'   => current_time('mysql'),
             ],
-            ['%d', '%d', '%s']
+            ['%d', '%d', '%d', '%s']
         );
 
         return (bool) $res;

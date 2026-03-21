@@ -391,8 +391,8 @@ class RepairCafePlanner {
     private function get_signup_block_reason($event_id, $user_id) {
         $event_expertises = $this->get_event_expertise_statuses($event_id);
 
-        if (empty($event_expertises)) {
-            return '';
+               if (empty($event_expertises)) {
+            return 'Voor dit evenement zijn nog geen expertises ingesteld.';
         }
 
         $user_expertise_ids = $this->get_user_expertise_ids($user_id);

@@ -1,7 +1,6 @@
 <?php
 if ( ! defined('ABSPATH') ) exit;
 
-
 /*
 EVENTS
 Deze functies sluiten nu aan op het bestaande rc_event post type
@@ -20,7 +19,6 @@ function repaircafe_get_events() {
     ));
 }
 
-
 function repaircafe_get_event( $event_id ) {
 
     $post = get_post( absint( $event_id ) );
@@ -32,15 +30,18 @@ function repaircafe_get_event( $event_id ) {
     return $post;
 }
 
-
 function repaircafe_create_event( $data ) {
 
-    $title       = isset($data['title']) ? sanitize_text_field($data['title']) : '';
-    $event_date  = isset($data['event_date']) ? sanitize_text_field($data['event_date']) : '';
-    $start_time  = isset($data['start_time']) ? sanitize_text_field($data['start_time']) : '';
-    $end_time    = isset($data['end_time']) ? sanitize_text_field($data['end_time']) : '';
-    $location    = isset($data['location']) ? sanitize_text_field($data['location']) : '';
-    $description = isset($data['description']) ? sanitize_textarea_field($data['description']) : '';
+    $title       = isset( $data['title'] ) ? sanitize_text_field( wp_unslash( $data['title'] ) ) : '';
+    $event_date  = isset( $data['event_date'] ) ? sanitize_text_field( wp_unslash( $data['event_date'] ) ) : '';
+    $start_time  = isset( $data['start_time'] ) ? sanitize_text_field( wp_unslash( $data['start_time'] ) ) : '';
+    $end_time    = isset( $data['end_time'] ) ? sanitize_text_field( wp_unslash( $data['end_time'] ) ) : '';
+    $location    = isset( $data['location'] ) ? sanitize_text_field( wp_unslash( $data['location'] ) ) : '';
+    $description = isset( $data['description'] ) ? sanitize_textarea_field( wp_unslash( $data['description'] ) ) : '';
+
+    if ( $title === '' ) {
+        return 0;
+    }
 
     $event_id = wp_insert_post(array(
         'post_type'    => 'rc_event',
@@ -49,30 +50,42 @@ function repaircafe_create_event( $data ) {
         'post_content' => $description,
     ));
 
-    if ( is_wp_error($event_id) || ! $event_id ) {
+    if ( is_wp_error( $event_id ) || ! $event_id ) {
         return 0;
     }
 
-    update_post_meta($event_id, '_rc_event_date', $event_date);
-    update_post_meta($event_id, '_rc_event_time', $start_time);
-    update_post_meta($event_id, '_rc_event_end_time', $end_time);
-    update_post_meta($event_id, '_rc_location_name', $location);
+    update_post_meta( $event_id, '_rc_event_date', $event_date );
+    update_post_meta( $event_id, '_rc_event_time', $start_time );
+    update_post_meta( $event_id, '_rc_event_end_time', $end_time );
+    update_post_meta( $event_id, '_rc_location_name', $location );
 
     return (int) $event_id;
 }
 
-
 function repaircafe_delete_event( $event_id ) {
 
-    $event_id = absint($event_id);
+    global $wpdb;
 
-    if ( ! $event_id || get_post_type($event_id) !== 'rc_event' ) {
+    $event_id = absint( $event_id );
+
+    if ( ! $event_id || get_post_type( $event_id ) !== 'rc_event' ) {
         return false;
     }
 
-    return (bool) wp_delete_post($event_id, true);
-}
+    $deleted = wp_delete_post( $event_id, true );
 
+    if ( ! $deleted ) {
+        return false;
+    }
+
+    $wpdb->delete(
+        $wpdb->prefix . 'rcp_event_expertises',
+        array( 'event_id' => $event_id ),
+        array( '%d' )
+    );
+
+    return true;
+}
 
 /*
 EXPERTISES
@@ -89,13 +102,12 @@ function repaircafe_get_expertises() {
     );
 }
 
-
 function repaircafe_add_expertise( $name ) {
 
     global $wpdb;
 
     $table = $wpdb->prefix . 'rcp_expertises';
-    $name  = trim( sanitize_text_field( $name ) );
+    $name  = trim( sanitize_text_field( wp_unslash( $name ) ) );
 
     if ( $name === '' ) {
         return 0;
@@ -112,23 +124,31 @@ function repaircafe_add_expertise( $name ) {
         return (int) $exists;
     }
 
-    $wpdb->insert(
+    $inserted = $wpdb->insert(
         $table,
         array(
-            'name' => $name
+            'name' => $name,
         ),
-        array('%s')
+        array( '%s' )
     );
+
+    if ( ! $inserted ) {
+        return 0;
+    }
 
     return (int) $wpdb->insert_id;
 }
-
 
 function repaircafe_get_user_expertises( $user_id ) {
 
     global $wpdb;
 
-    $table = $wpdb->prefix . 'rcp_user_expertises';
+    $table   = $wpdb->prefix . 'rcp_user_expertises';
+    $user_id = absint( $user_id );
+
+    if ( ! $user_id ) {
+        return array();
+    }
 
     return $wpdb->get_col(
         $wpdb->prepare(
@@ -138,50 +158,55 @@ function repaircafe_get_user_expertises( $user_id ) {
     );
 }
 
-
 function repaircafe_set_user_expertises( $user_id, $expertises ) {
 
     global $wpdb;
 
     $table   = $wpdb->prefix . 'rcp_user_expertises';
-    $user_id = absint($user_id);
+    $user_id = absint( $user_id );
+
+    if ( ! $user_id ) {
+        return false;
+    }
 
     $wpdb->delete(
         $table,
-        array('user_id' => $user_id),
-        array('%d')
+        array( 'user_id' => $user_id ),
+        array( '%d' )
     );
 
-    if ( empty($expertises) || ! is_array($expertises) ) {
-        return;
+    if ( empty( $expertises ) || ! is_array( $expertises ) ) {
+        return true;
     }
 
-    $expertises = array_unique(array_map('absint', $expertises));
+    $expertises = array_unique( array_map( 'absint', $expertises ) );
+    $expertises = array_filter( $expertises );
 
     foreach ( $expertises as $expertise_id ) {
-
-        if ( $expertise_id <= 0 ) {
-            continue;
-        }
-
         $wpdb->insert(
             $table,
             array(
                 'user_id'      => $user_id,
-                'expertise_id' => $expertise_id
+                'expertise_id' => $expertise_id,
             ),
-            array('%d', '%d')
+            array( '%d', '%d' )
         );
     }
-}
 
+    return true;
+}
 
 function repaircafe_get_user_expertise_names( $user_id ) {
 
     global $wpdb;
 
+    $user_id    = absint( $user_id );
     $table_user = $wpdb->prefix . 'rcp_user_expertises';
     $table_exp  = $wpdb->prefix . 'rcp_expertises';
+
+    if ( ! $user_id ) {
+        return array();
+    }
 
     return $wpdb->get_col(
         $wpdb->prepare(

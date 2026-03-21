@@ -696,21 +696,23 @@ class RepairCafePlanner {
             if ($signups) {
                 $out .= "<div class='rc-signups'><strong>Aangemeld:</strong><ul>";
 
-                foreach ($signups as $s) {
-                   $expertise = $wpdb->get_var($wpdb->prepare(
-    "SELECT e.name
-     FROM {$this->table_name()} s2
-     LEFT JOIN {$wpdb->prefix}rcp_expertises e ON s2.expertise_id = e.id
-     WHERE s2.user_id = %d AND s2.event_id = %d
-     LIMIT 1",
-    $s->ID,
-    $id
-));
+                         foreach ($signups as $s) {
+                    $expertise = $wpdb->get_var($wpdb->prepare(
+                        "SELECT e.name
+                         FROM {$this->table_name()} s2
+                         LEFT JOIN {$wpdb->prefix}rcp_expertises e ON s2.expertise_id = e.id
+                         WHERE s2.user_id = %d AND s2.event_id = %d
+                         LIMIT 1",
+                        $s->ID,
+                        $id
+                    ));
 
-$exp_text = $expertise ? ' (' . $expertise . ')' : '';
+                    $name = $s->display_name;
+                    if ($expertise) {
+                        $name .= ' (' . $expertise . ')';
+                    }
 
-                
-                    $out .= "<li>" . esc_html($s->display_name . $exp_text) . "</li>";
+                    $out .= "<li>" . esc_html($name) . "</li>";
                 }
 
                 $out .= "</ul></div>";

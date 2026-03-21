@@ -428,7 +428,7 @@ class RepairCafePlanner {
         return (int) $wpdb->get_var($sql);
     }
 
-    private function do_signup($event_id, $user_id) {
+        private function do_signup($event_id, $user_id) {
         global $wpdb;
         $table = $this->table_name();
 
@@ -437,6 +437,11 @@ class RepairCafePlanner {
         }
 
         if ($this->is_full($event_id)) {
+            return false;
+        }
+
+        $block_reason = $this->get_signup_block_reason($event_id, $user_id);
+        if ($block_reason !== '') {
             return false;
         }
 

@@ -375,6 +375,53 @@ class RepairCafePlanner {
         return $result;
     }
 
+    private function get_user_expertise_ids($user_id) {
+        global $wpdb;
+
+        $rows = $wpdb->get_col($wpdb->prepare(
+            "SELECT expertise_id
+             FROM {$wpdb->prefix}rcp_user_expertises
+             WHERE user_id = %d",
+            $user_id
+        ));
+
+        return array_map('intval', $rows ?: []);
+    }
+
+    private function get_signup_block_reason($event_id, $user_id) {
+        $event_expertises = $this->get_event_expertise_statuses($event_id);
+
+        if (empty($event_expertises)) {
+            return '';
+        }
+
+        $user_expertise_ids = $this->get_user_expertise_ids($user_id);
+
+        if (empty($user_expertise_ids)) {
+            return 'Je hebt nog geen expertise gekoppeld aan je account.';
+        }
+
+        $matching_rows = [];
+
+        foreach ($event_expertises as $row) {
+            if (in_array((int) $row->expertise_id, $user_expertise_ids, true)) {
+                $matching_rows[] = $row;
+            }
+        }
+
+        if (empty($matching_rows)) {
+            return 'Jouw expertise past niet bij dit evenement.';
+        }
+
+        foreach ($matching_rows as $row) {
+            if (!$row->is_full) {
+                return '';
+            }
+        }
+
+        return 'Alle plekken voor jouw expertise(s) zijn al bezet.';
+    }
+
     private function render_expertise_statuses($event_id) {
         $rows = $this->get_event_expertise_statuses($event_id);
 

@@ -936,11 +936,12 @@ class RepairCafePlanner {
                 echo '<div style="margin-top:8px;color:#666;">(Nog geen aanmeldingen)</div>';
             } else {
                 echo '<ol style="margin-top:8px;">';
-                                foreach ($rows as $r) {
+                                             foreach ($rows as $r) {
                     $u = get_user_by('id', (int) $r->user_id);
                     if (!$u) continue;
 
-                    $name = $u->display_name ?: $u->user_login;
+                    $name  = $u->display_name ?: $u->user_login;
+                    $email = $u->user_email ?: '';
 
                     $expertise = $wpdb->get_var($wpdb->prepare(
                         "SELECT e.name
@@ -951,6 +952,20 @@ class RepairCafePlanner {
                         (int) $r->user_id,
                         $event_id
                     ));
+
+                    echo '<li>';
+                    echo esc_html($name);
+
+                    if ($expertise) {
+                        echo ' <span style="color:#666;">(' . esc_html($expertise) . ')</span>';
+                    }
+
+                    if ($email) {
+                        echo ' <span style="color:#666;">- ' . esc_html($email) . '</span>';
+                    }
+
+                    echo '</li>';
+                }
 
                     if ($expertise) {
                         $name .= ' (' . $expertise . ')';

@@ -542,8 +542,9 @@ class RepairCafePlanner {
     public function handle_actions() {
         if (empty($_GET['rc_action'])) return;
 
-        $action   = sanitize_text_field($_GET['rc_action']);
-        $event_id = isset($_GET['event_id']) ? (int) $_GET['event_id'] : 0;
+               $action       = sanitize_text_field($_REQUEST['rc_action'] ?? '');
+        $event_id     = isset($_REQUEST['event_id']) ? (int) $_REQUEST['event_id'] : 0;
+        $expertise_id = isset($_REQUEST['expertise_id']) ? (int) $_REQUEST['expertise_id'] : 0;
 
         if (!$event_id) return;
 

@@ -377,17 +377,23 @@ class RepairCafePlanner {
         return $result;
     }
 
-    private function get_user_expertise_ids($user_id) {
+     private function get_user_expertise_ids($user_id) {
         global $wpdb;
 
-        $rows = $wpdb->get_col($wpdb->prepare(
+        $expertise_id = $wpdb->get_var($wpdb->prepare(
             "SELECT expertise_id
              FROM {$wpdb->prefix}rcp_user_expertises
-             WHERE user_id = %d",
+             WHERE user_id = %d
+             ORDER BY expertise_id ASC
+             LIMIT 1",
             $user_id
         ));
 
-        return array_map('intval', $rows ?: []);
+        if (!$expertise_id) {
+            return [];
+        }
+
+        return [(int) $expertise_id];
     }
 
         private function get_signup_block_reason($event_id, $user_id, $expertise_id = 0) {
@@ -579,13 +585,13 @@ class RepairCafePlanner {
             wp_die('Ongeldige beveiligingscheck.');
         }
 
-                     if ($action === 'signup') {
-            $ok = $this->do_signup($event_id, $user_id, $expertise_id);
+               if ($action === 'signup') {
+            $ok = $this->do_signup($event_id, $user_id);
 
             if ($ok) {
                 $this->redirect_back('Aangemeld ✅');
             } else {
-                $reason = $this->get_signup_block_reason($event_id, $user_id, $expertise_id);
+                $reason = $this->get_signup_block_reason($event_id, $user_id);
 
                 if ($reason !== '') {
                     $this->redirect_back($reason);
@@ -775,7 +781,7 @@ $exp_text = $expertise ? ' (' . $expertise . ')' : '';
         return $out;
     }
 
-            private function render_buttons($event_id, $compact = false) {
+                private function render_buttons($event_id, $compact = false) {
         if (!is_user_logged_in()) {
             $login = wp_login_url(get_permalink());
             return '<a class="rc-btn" href="' . esc_url($login) . '">Inloggen om aan te melden</a>';
@@ -789,46 +795,18 @@ $exp_text = $expertise ? ' (' . $expertise . ')' : '';
                 return '<span class="rc-note">Dit event zit vol.</span>';
             }
 
-            $event_expertises = $this->get_event_expertise_statuses($event_id);
-            if (empty($event_expertises)) {
-                return '<span class="rc-note">Voor dit evenement zijn nog geen expertises ingesteld.</span>';
+            $block_reason = $this->get_signup_block_reason($event_id, $user_id);
+            if ($block_reason !== '') {
+                return '<span class="rc-note">' . esc_html($block_reason) . '</span>';
             }
 
-            $user_expertise_ids = $this->get_user_expertise_ids($user_id);
-            if (empty($user_expertise_ids)) {
-                return '<span class="rc-note">Je hebt nog geen expertise gekoppeld aan je account.</span>';
-            }
+            $url = add_query_arg([
+                'rc_action' => 'signup',
+                'event_id'  => $event_id,
+                '_wpnonce'  => wp_create_nonce('rc_signup_' . $event_id),
+            ], home_url('/'));
 
-            $options = '';
-
-            foreach ($event_expertises as $row) {
-                if (!in_array((int) $row->expertise_id, $user_expertise_ids, true)) {
-                    continue;
-                }
-
-                if ($row->is_full) {
-                    continue;
-                }
-
-                $label = $row->name . ' (' . $row->free . ' vrij)';
-                $options .= '<option value="' . esc_attr($row->expertise_id) . '">' . esc_html($label) . '</option>';
-            }
-
-            if ($options === '') {
-                return '<span class="rc-note">Voor jouw expertise(s) is geen plek meer.</span>';
-            }
-
-            $action_url = home_url('/');
-
-            $out  = '<form method="post" action="' . esc_url($action_url) . '" class="rc-signup-form">';
-            $out .= '<input type="hidden" name="rc_action" value="signup">';
-            $out .= '<input type="hidden" name="event_id" value="' . esc_attr($event_id) . '">';
-            $out .= '<input type="hidden" name="_wpnonce" value="' . esc_attr(wp_create_nonce('rc_signup_' . $event_id)) . '">';
-            $out .= '<select name="expertise_id" class="rc-select">' . $options . '</select> ';
-            $out .= '<button type="submit" class="rc-btn">Aanmelden</button>';
-            $out .= '</form>';
-
-            return $out;
+            return '<a class="rc-btn" href="' . esc_url($url) . '">Aanmelden</a>';
         }
 
         if (!$this->can_unsubscribe($event_id)) {

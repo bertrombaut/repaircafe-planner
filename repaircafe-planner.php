@@ -576,7 +576,11 @@ class RepairCafePlanner {
 
         foreach ($rows as $r) {
             $event_id = (int) $r->event_id;
+
             if (get_post_type($event_id) !== 'rc_event') continue;
+
+            $status = get_post_status($event_id);
+            if (!in_array($status, ['publish', 'future'], true)) continue;
 
             $title = get_the_title($event_id);
             $date  = get_post_meta($event_id, '_rc_event_date', true);

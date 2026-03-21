@@ -789,19 +789,7 @@ class RepairCafePlanner {
 
         return '<a class="rc-btn rc-btn-secondary" href="' . esc_url($url) . '">Afmelden</a>';
     }
-        if (!$this->can_unsubscribe($event_id)) {
-            $contact = $this->get_contact_name();
-            return '<span class="rc-note">Afmelden binnen 24 uur dat het evenement begint kan niet, graag contact opnemen met ' . esc_html($contact) . '.</span>';
-        }
-
-        $url = add_query_arg([
-            'rc_action' => 'unsubscribe',
-            'event_id'  => $event_id,
-            '_wpnonce'  => wp_create_nonce('rc_unsubscribe_' . $event_id),
-        ], home_url('/'));
-
-        return '<a class="rc-btn rc-btn-secondary" href="' . esc_url($url) . '">Afmelden</a>';
-    }
+        
 
     /* -------------------- Admin menu -------------------- */
     public function admin_menu() {

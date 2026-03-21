@@ -502,7 +502,7 @@ class RepairCafePlanner {
         return (int) $wpdb->get_var($sql);
     }
 
-    private function do_signup($event_id, $user_id, $expertise_id = 0) {
+        private function do_signup($event_id, $user_id, $expertise_id = 0) {
         global $wpdb;
         $table = $this->table_name();
 
@@ -512,6 +512,11 @@ class RepairCafePlanner {
 
         if ($this->is_full($event_id)) {
             return false;
+        }
+
+        $user_expertise_ids = $this->get_user_expertise_ids($user_id);
+        if ($expertise_id <= 0 && !empty($user_expertise_ids)) {
+            $expertise_id = (int) $user_expertise_ids[0];
         }
 
         $block_reason = $this->get_signup_block_reason($event_id, $user_id, $expertise_id);

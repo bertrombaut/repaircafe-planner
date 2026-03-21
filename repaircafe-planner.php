@@ -698,7 +698,7 @@ class RepairCafePlanner {
 
 $exp_text = $expertise ? ' (' . $expertise . ')' : '';
 
-                    $exp_text = $expertises ? ' (' . implode(', ', $expertises) . ')' : '';
+                
                     $out .= "<li>" . esc_html($s->display_name . $exp_text) . "</li>";
                 }
 
@@ -917,7 +917,7 @@ $exp_text = $expertise ? ' (' . $expertise . ')' : '';
 
             $expertise_counts = $wpdb->get_results($wpdb->prepare(
                 "SELECT ee.expertise_id, e.name, ee.max_volunteers,
-                        COUNT(DISTINCT s.user_id) as count
+                        COUNT(DISTINCT s.id) AS count
                  FROM {$wpdb->prefix}rcp_event_expertises ee
                  LEFT JOIN {$wpdb->prefix}rcp_expertises e ON ee.expertise_id = e.id
                  LEFT JOIN {$wpdb->prefix}rcp_user_expertises ue ON ue.expertise_id = ee.expertise_id

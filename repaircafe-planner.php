@@ -390,10 +390,10 @@ class RepairCafePlanner {
         return array_map('intval', $rows ?: []);
     }
 
-    private function get_signup_block_reason($event_id, $user_id) {
+        private function get_signup_block_reason($event_id, $user_id, $expertise_id = 0) {
         $event_expertises = $this->get_event_expertise_statuses($event_id);
 
-               if (empty($event_expertises)) {
+        if (empty($event_expertises)) {
             return 'Voor dit evenement zijn nog geen expertises ingesteld.';
         }
 
@@ -415,11 +415,32 @@ class RepairCafePlanner {
             return 'Jouw expertise past niet bij dit evenement.';
         }
 
+        if ($expertise_id > 0) {
+            if (!in_array((int) $expertise_id, $user_expertise_ids, true)) {
+                return 'Deze expertise hoort niet bij jouw account.';
+            }
+
+            foreach ($matching_rows as $row) {
+                if ((int) $row->expertise_id === (int) $expertise_id) {
+                    if ($row->is_full) {
+                        return 'Voor deze expertise is geen plek meer.';
+                    }
+
+                    return '';
+                }
+            }
+
+            return 'Deze expertise past niet bij dit evenement.';
+        }
+
         foreach ($matching_rows as $row) {
             if (!$row->is_full) {
                 return '';
             }
         }
+
+        return 'Alle plekken voor jouw expertise(s) zijn al bezet.';
+    }
 
         return 'Alle plekken voor jouw expertise(s) zijn al bezet.';
     }

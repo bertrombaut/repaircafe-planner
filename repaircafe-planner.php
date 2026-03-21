@@ -581,13 +581,13 @@ class RepairCafePlanner {
             wp_die('Ongeldige beveiligingscheck.');
         }
 
-               if ($action === 'signup') {
-            $ok = $this->do_signup($event_id, $user_id);
+                     if ($action === 'signup') {
+            $ok = $this->do_signup($event_id, $user_id, $expertise_id);
 
             if ($ok) {
                 $this->redirect_back('Aangemeld ✅');
             } else {
-                $reason = $this->get_signup_block_reason($event_id, $user_id);
+                $reason = $this->get_signup_block_reason($event_id, $user_id, $expertise_id);
 
                 if ($reason !== '') {
                     $this->redirect_back($reason);

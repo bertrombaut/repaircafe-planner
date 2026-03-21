@@ -518,36 +518,33 @@ class RepairCafePlanner {
             $out .= "<div>" . wpautop(wp_kses_post(get_the_content())) . "</div>";
 
             $signups = $wpdb->get_results($wpdb->prepare(
-   $signups = $wpdb->get_results($wpdb->prepare(
-    "SELECT u.ID, u.display_name
-     FROM {$this->table_name()} s
-     LEFT JOIN {$wpdb->users} u ON s.user_id = u.ID
-     WHERE s.event_id = %d
-     ORDER BY s.created_at ASC",
-    $id
-));
+                "SELECT u.ID, u.display_name
+                 FROM {$this->table_name()} s
+                 LEFT JOIN {$wpdb->users} u ON s.user_id = u.ID
+                 WHERE s.event_id = %d
+                 ORDER BY s.created_at ASC",
+                $id
+            ));
 
-if ($signups) {
-    $out .= "<div class='rc-signups'><strong>Aangemeld:</strong><ul>";
+            if ($signups) {
+                $out .= "<div class='rc-signups'><strong>Aangemeld:</strong><ul>";
 
-    foreach ($signups as $s) {
+                foreach ($signups as $s) {
+                    $expertises = $wpdb->get_col($wpdb->prepare(
+                        "SELECT e.name
+                         FROM {$wpdb->prefix}rcp_user_expertises ue
+                         LEFT JOIN {$wpdb->prefix}rcp_expertises e ON ue.expertise_id = e.id
+                         WHERE ue.user_id = %d",
+                        $s->ID
+                    ));
 
-    $expertises = $wpdb->get_col($wpdb->prepare(
-        "SELECT e.name
-         FROM {$wpdb->prefix}rcp_user_expertises ue
-         LEFT JOIN {$wpdb->prefix}rcp_expertises e ON ue.expertise_id = e.id
-         WHERE ue.user_id = %d",
-        $s->ID
-    ));
+                    $exp_text = $expertises ? ' (' . implode(', ', $expertises) . ')' : '';
+                    $out .= "<li>" . esc_html($s->display_name . $exp_text) . "</li>";
+                }
 
-    $exp_text = $expertises ? ' (' . implode(', ', $expertises) . ')' : '';
+                $out .= "</ul></div>";
+            }
 
-    $out .= "<li>" . esc_html($s->display_name . $exp_text) . "</li>";
-}
-
-    $out .= "</ul></div>";
-}
-            
             $out .= "<div class='rc-actions'>" . $this->render_buttons($id) . "</div>";
             $out .= "</div>";
         }
@@ -714,6 +711,24 @@ if ($signups) {
             $pretty = $date ? date_i18n('l d-m-Y', strtotime($date)) : '';
             $count  = $this->signup_count($event_id);
 
+            $rows = $wpdb->get_results($wpdb->prepare(
+                "SELECT user_id, created_at FROM $table WHERE event_id = %d ORDER BY created_at ASC",
+                $event_id
+            ));
+
+            $expertise_counts = $wpdb->get_results($wpdb->prepare(
+                "SELECT ee.expertise_id, e.name, ee.max_volunteers,
+                        COUNT(s.user_id) as count
+                 FROM {$wpdb->prefix}rcp_event_expertises ee
+                 LEFT JOIN {$wpdb->prefix}rcp_expertises e ON ee.expertise_id = e.id
+                 LEFT JOIN {$wpdb->prefix}rcp_user_expertises ue ON ue.expertise_id = ee.expertise_id
+                 LEFT JOIN {$table} s
+                    ON s.user_id = ue.user_id AND s.event_id = ee.event_id
+                 WHERE ee.event_id = %d
+                 GROUP BY ee.expertise_id, e.name, ee.max_volunteers",
+                $event_id
+            ));
+
             echo '<div style="border:1px solid #ddd;background:#fff;padding:14px;border-radius:10px;">';
             echo '<h2 style="margin:0 0 6px 0;">' . esc_html(get_the_title($event_id)) . '</h2>';
 
@@ -722,29 +737,15 @@ if ($signups) {
             }
 
             echo '<div><strong>Aanmeldingen:</strong> ' . esc_html($count) . ($max !== null ? ' / ' . esc_html($max) : '') . '</div>';
-if ($expertise_counts) {
-    echo '<ul style="margin:6px 0 0 15px;">';
-    foreach ($expertise_counts as $exp) {
-        echo '<li>' . esc_html($exp->name) . ': ' . esc_html($exp->count) . '/' . esc_html($exp->max_volunteers) . '</li>';
-    }
-    echo '</ul>';
-}
-            $rows = $wpdb->get_results($wpdb->prepare(
-                "SELECT user_id, created_at FROM $table WHERE event_id = %d ORDER BY created_at ASC",
-                $event_id
-            ));
-$expertise_counts = $wpdb->get_results($wpdb->prepare(
-    "SELECT ee.expertise_id, e.name, ee.max_volunteers,
-            COUNT(s.user_id) as count
-     FROM {$wpdb->prefix}rcp_event_expertises ee
-     LEFT JOIN {$wpdb->prefix}rcp_expertises e ON ee.expertise_id = e.id
-     LEFT JOIN {$wpdb->prefix}rcp_user_expertises ue ON ue.expertise_id = ee.expertise_id
-     LEFT JOIN {$table} s 
-        ON s.user_id = ue.user_id AND s.event_id = ee.event_id
-     WHERE ee.event_id = %d
-     GROUP BY ee.expertise_id",
-    $event_id
-));
+
+            if ($expertise_counts) {
+                echo '<ul style="margin:6px 0 0 15px;">';
+                foreach ($expertise_counts as $exp) {
+                    echo '<li>' . esc_html($exp->name) . ': ' . esc_html($exp->count) . '/' . esc_html($exp->max_volunteers) . '</li>';
+                }
+                echo '</ul>';
+            }
+
             if (!$rows) {
                 echo '<div style="margin-top:8px;color:#666;">(Nog geen aanmeldingen)</div>';
             } else {

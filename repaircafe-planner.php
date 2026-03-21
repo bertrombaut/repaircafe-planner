@@ -67,15 +67,17 @@ class RepairCafePlanner {
         $table = $this->table_name();
         $charset = $wpdb->get_charset_collate();
 
-        $sql = "CREATE TABLE $table (
+                $sql = "CREATE TABLE $table (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             event_id BIGINT(20) UNSIGNED NOT NULL,
             user_id BIGINT(20) UNSIGNED NOT NULL,
+            expertise_id BIGINT(20) UNSIGNED NOT NULL DEFAULT 0,
             created_at DATETIME NOT NULL,
             PRIMARY KEY (id),
             UNIQUE KEY event_user (event_id, user_id),
             KEY event_id (event_id),
-            KEY user_id (user_id)
+            KEY user_id (user_id),
+            KEY expertise_id (expertise_id)
         ) $charset;";
 
         dbDelta($sql);

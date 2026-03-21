@@ -518,7 +518,8 @@ class RepairCafePlanner {
             $out .= "<div>" . wpautop(wp_kses_post(get_the_content())) . "</div>";
 
             $signups = $wpdb->get_results($wpdb->prepare(
-    "SELECT u.display_name
+   $signups = $wpdb->get_results($wpdb->prepare(
+    "SELECT u.ID, u.display_name
      FROM {$this->table_name()} s
      LEFT JOIN {$wpdb->users} u ON s.user_id = u.ID
      WHERE s.event_id = %d
@@ -530,8 +531,19 @@ if ($signups) {
     $out .= "<div class='rc-signups'><strong>Aangemeld:</strong><ul>";
 
     foreach ($signups as $s) {
-        $out .= "<li>" . esc_html($s->display_name) . "</li>";
-    }
+
+    $expertises = $wpdb->get_col($wpdb->prepare(
+        "SELECT e.name
+         FROM {$wpdb->prefix}rcp_user_expertises ue
+         LEFT JOIN {$wpdb->prefix}rcp_expertises e ON ue.expertise_id = e.id
+         WHERE ue.user_id = %d",
+        $s->ID
+    ));
+
+    $exp_text = $expertises ? ' (' . implode(', ', $expertises) . ')' : '';
+
+    $out .= "<li>" . esc_html($s->display_name . $exp_text) . "</li>";
+}
 
     $out .= "</ul></div>";
 }

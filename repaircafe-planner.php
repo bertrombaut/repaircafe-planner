@@ -330,6 +330,79 @@ class RepairCafePlanner {
         return $this->signup_count($event_id) >= $max;
     }
 
+    private function get_event_expertise_statuses($event_id) {
+        global $wpdb;
+
+        $table = $this->table_name();
+
+        $rows = $wpdb->get_results($wpdb->prepare(
+            "SELECT ee.expertise_id, e.name, ee.max_volunteers,
+                    COUNT(DISTINCT s.user_id) AS count
+             FROM {$wpdb->prefix}rcp_event_expertises ee
+             LEFT JOIN {$wpdb->prefix}rcp_expertises e
+                ON ee.expertise_id = e.id
+             LEFT JOIN {$wpdb->prefix}rcp_user_expertises ue
+                ON ue.expertise_id = ee.expertise_id
+             LEFT JOIN {$table} s
+                ON s.user_id = ue.user_id AND s.event_id = ee.event_id
+             WHERE ee.event_id = %d
+             GROUP BY ee.expertise_id, e.name, ee.max_volunteers
+             ORDER BY e.name ASC",
+            $event_id
+        ));
+
+        if (!$rows) {
+            return [];
+        }
+
+        $result = [];
+
+        foreach ($rows as $row) {
+            $count = (int) $row->count;
+            $max   = (int) $row->max_volunteers;
+            $free  = max(0, $max - $count);
+
+            $result[] = (object) [
+                'expertise_id'   => (int) $row->expertise_id,
+                'name'           => (string) $row->name,
+                'count'          => $count,
+                'max_volunteers' => $max,
+                'free'           => $free,
+                'is_full'        => ($free <= 0),
+            ];
+        }
+
+        return $result;
+    }
+
+    private function render_expertise_statuses($event_id) {
+        $rows = $this->get_event_expertise_statuses($event_id);
+
+        if (empty($rows)) {
+            return '';
+        }
+
+        $out = "<div class='rc-expertises'>";
+        $out .= "<strong>Expertises:</strong>";
+        $out .= "<ul class='rc-expertise-list'>";
+
+        foreach ($rows as $row) {
+            $status_text = $row->is_full
+                ? 'vol'
+                : $row->free . ' vrij';
+
+            $out .= "<li class='rc-expertise-item'>";
+            $out .= "<span class='rc-expertise-name'>" . esc_html($row->name) . "</span>";
+            $out .= "<span class='rc-expertise-meta'>" . esc_html($row->count) . "/" . esc_html($row->max_volunteers) . " bezet · " . esc_html($status_text) . "</span>";
+            $out .= "</li>";
+        }
+
+        $out .= "</ul>";
+        $out .= "</div>";
+
+        return $out;
+    }
+
     private function is_signed_up($event_id, $user_id) {
         global $wpdb;
         $table = $this->table_name();
@@ -515,6 +588,8 @@ class RepairCafePlanner {
                 $out .= "<p class='rc-loc'><strong>Locatie:</strong><br>$loc</p>";
             }
 
+            $out .= $this->render_expertise_statuses($id);
+
             $out .= "<div>" . wpautop(wp_kses_post(get_the_content())) . "</div>";
 
             $signups = $wpdb->get_results($wpdb->prepare(
@@ -604,6 +679,8 @@ class RepairCafePlanner {
             if ($loc) {
                 $out .= "<p class='rc-loc'><strong>Locatie:</strong><br>$loc</p>";
             }
+
+            $out .= $this->render_expertise_statuses($event_id);
 
             $out .= "<div class='rc-actions'>" . $this->render_buttons($event_id, true) . "</div>";
             $out .= "</div>";
@@ -722,14 +799,15 @@ class RepairCafePlanner {
 
             $expertise_counts = $wpdb->get_results($wpdb->prepare(
                 "SELECT ee.expertise_id, e.name, ee.max_volunteers,
-                        COUNT(s.user_id) as count
+                        COUNT(DISTINCT s.user_id) as count
                  FROM {$wpdb->prefix}rcp_event_expertises ee
                  LEFT JOIN {$wpdb->prefix}rcp_expertises e ON ee.expertise_id = e.id
                  LEFT JOIN {$wpdb->prefix}rcp_user_expertises ue ON ue.expertise_id = ee.expertise_id
                  LEFT JOIN {$table} s
                     ON s.user_id = ue.user_id AND s.event_id = ee.event_id
                  WHERE ee.event_id = %d
-                 GROUP BY ee.expertise_id, e.name, ee.max_volunteers",
+                 GROUP BY ee.expertise_id, e.name, ee.max_volunteers
+                 ORDER BY e.name ASC",
                 $event_id
             ));
 
@@ -745,7 +823,8 @@ class RepairCafePlanner {
             if ($expertise_counts) {
                 echo '<ul style="margin:6px 0 0 15px;">';
                 foreach ($expertise_counts as $exp) {
-                    echo '<li>' . esc_html($exp->name) . ': ' . esc_html($exp->count) . '/' . esc_html($exp->max_volunteers) . '</li>';
+                    $free = max(0, (int) $exp->max_volunteers - (int) $exp->count);
+                    echo '<li>' . esc_html($exp->name) . ': ' . esc_html($exp->count) . '/' . esc_html($exp->max_volunteers) . ' bezet, ' . esc_html($free) . ' vrij</li>';
                 }
                 echo '</ul>';
             }
@@ -782,11 +861,21 @@ class RepairCafePlanner {
             .rc-meta{font-weight:600;margin:0 0 8px 0;}
             .rc-meta small{font-weight:400;color:#666;}
             .rc-loc{margin:0 0 10px 0;color:#333;}
+            .rc-expertises{margin:0 0 14px 0;padding:12px;border:1px solid #e3e3e3;border-radius:10px;background:#fff;}
+            .rc-expertise-list{list-style:none;margin:8px 0 0 0;padding:0;}
+            .rc-expertise-item{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #f0f0f0;}
+            .rc-expertise-item:last-child{border-bottom:none;padding-bottom:0;}
+            .rc-expertise-name{font-weight:600;color:#222;}
+            .rc-expertise-meta{color:#666;font-size:14px;text-align:right;}
             .rc-actions{margin-top:12px;}
             .rc-btn{display:inline-block;padding:9px 14px;border-radius:8px;text-decoration:none;border:1px solid #2c7be5;background:#2c7be5;color:#fff;font-weight:600;}
             .rc-btn:hover{filter:brightness(0.95);}
             .rc-btn-secondary{background:#fff;color:#2c7be5;}
             .rc-note{display:inline-block;padding:10px;border:1px solid #ddd;border-radius:10px;background:#fff;color:#333;}
+            @media (max-width: 640px){
+                .rc-expertise-item{display:block;}
+                .rc-expertise-meta{display:block;text-align:left;margin-top:4px;}
+            }
         ");
     }
 }

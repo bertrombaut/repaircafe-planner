@@ -936,11 +936,26 @@ class RepairCafePlanner {
                 echo '<div style="margin-top:8px;color:#666;">(Nog geen aanmeldingen)</div>';
             } else {
                 echo '<ol style="margin-top:8px;">';
-                foreach ($rows as $r) {
+                                foreach ($rows as $r) {
                     $u = get_user_by('id', (int) $r->user_id);
                     if (!$u) continue;
 
                     $name = $u->display_name ?: $u->user_login;
+
+                    $expertise = $wpdb->get_var($wpdb->prepare(
+                        "SELECT e.name
+                         FROM {$this->table_name()} s2
+                         LEFT JOIN {$wpdb->prefix}rcp_expertises e ON s2.expertise_id = e.id
+                         WHERE s2.user_id = %d AND s2.event_id = %d
+                         LIMIT 1",
+                        (int) $r->user_id,
+                        $event_id
+                    ));
+
+                    if ($expertise) {
+                        $name .= ' (' . $expertise . ')';
+                    }
+
                     echo '<li>' . esc_html($name) . ' <span style="color:#666;">(' . esc_html($u->user_email) . ')</span></li>';
                 }
                 echo '</ol>';

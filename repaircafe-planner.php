@@ -442,8 +442,6 @@ class RepairCafePlanner {
         return 'Alle plekken voor jouw expertise(s) zijn al bezet.';
     }
 
-        return 'Alle plekken voor jouw expertise(s) zijn al bezet.';
-    }
 
     private function render_expertise_statuses($event_id) {
         $rows = $this->get_event_expertise_statuses($event_id);
@@ -562,7 +560,7 @@ class RepairCafePlanner {
 
     /* -------------------- Actions: signup/unsubscribe -------------------- */
     public function handle_actions() {
-        if (empty($_GET['rc_action'])) return;
+              if (empty($_REQUEST['rc_action'])) return;
 
                $action       = sanitize_text_field($_REQUEST['rc_action'] ?? '');
         $event_id     = isset($_REQUEST['event_id']) ? (int) $_REQUEST['event_id'] : 0;
@@ -575,7 +573,7 @@ class RepairCafePlanner {
         }
 
         $user_id = get_current_user_id();
-        $nonce   = $_GET['_wpnonce'] ?? '';
+        $nonce   = $_REQUEST['_wpnonce'] ?? '';
 
         if (!wp_verify_nonce($nonce, 'rc_' . $action . '_' . $event_id)) {
             wp_die('Ongeldige beveiligingscheck.');

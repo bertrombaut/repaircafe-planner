@@ -558,7 +558,7 @@ class RepairCafePlanner {
         return $res !== false;
     }
 
-    private function redirect_back($msg) {
+        private function redirect_back($msg) {
         $ref = wp_get_referer();
         if (!$ref) {
             $ref = home_url('/');
@@ -567,6 +567,83 @@ class RepairCafePlanner {
         $url = add_query_arg(['rc_msg' => rawurlencode($msg)], $ref);
         wp_safe_redirect($url);
         exit;
+    }
+
+    private function send_signup_emails($event_id, $user_id) {
+        $user = get_user_by('id', (int) $user_id);
+        if (!$user) return;
+
+        $event_title = get_the_title($event_id);
+        $event_date  = get_post_meta($event_id, '_rc_event_date', true);
+        $event_time  = get_post_meta($event_id, '_rc_event_time', true);
+        $location    = wp_strip_all_tags(str_replace('<br>', ', ', $this->format_location($event_id)));
+
+        $pretty_date = '';
+        if ($event_date) {
+            $pretty_date = date_i18n('l d-m-Y', strtotime($event_date));
+        }
+
+        $expertise = $this->get_user_expertise_ids($user_id);
+        $expertise_name = '';
+
+        if (!empty($expertise)) {
+            global $wpdb;
+            $expertise_name = (string) $wpdb->get_var($wpdb->prepare(
+                "SELECT name FROM {$wpdb->prefix}rcp_expertises WHERE id = %d LIMIT 1",
+                (int) $expertise[0]
+            ));
+        }
+
+        $subject_user = 'Bevestiging aanmelding Repair Café';
+        $message_user = "Beste " . $user->display_name . ",\n\n";
+        $message_user .= "Je bent aangemeld voor: " . $event_title . "\n";
+
+        if ($pretty_date) {
+            $message_user .= "Datum: " . $pretty_date . "\n";
+        }
+
+        if ($event_time) {
+            $message_user .= "Tijd: " . $event_time . "\n";
+        }
+
+        if ($location) {
+            $message_user .= "Locatie: " . $location . "\n";
+        }
+
+        if ($expertise_name) {
+            $message_user .= "Expertise: " . $expertise_name . "\n";
+        }
+
+        $message_user .= "\nDank je wel voor je aanmelding.";
+
+        wp_mail($user->user_email, $subject_user, $message_user);
+
+        $admin_email = get_option('admin_email');
+        if ($admin_email) {
+            $subject_admin = 'Nieuwe aanmelding Repair Café';
+            $message_admin = "Er is een nieuwe aanmelding binnengekomen.\n\n";
+            $message_admin .= "Vrijwilliger: " . $user->display_name . "\n";
+            $message_admin .= "E-mail: " . $user->user_email . "\n";
+            $message_admin .= "Evenement: " . $event_title . "\n";
+
+            if ($pretty_date) {
+                $message_admin .= "Datum: " . $pretty_date . "\n";
+            }
+
+            if ($event_time) {
+                $message_admin .= "Tijd: " . $event_time . "\n";
+            }
+
+            if ($location) {
+                $message_admin .= "Locatie: " . $location . "\n";
+            }
+
+            if ($expertise_name) {
+                $message_admin .= "Expertise: " . $expertise_name . "\n";
+            }
+
+            wp_mail($admin_email, $subject_admin, $message_admin);
+        }
     }
 
     /* -------------------- Actions: signup/unsubscribe -------------------- */
@@ -590,10 +667,11 @@ class RepairCafePlanner {
             wp_die('Ongeldige beveiligingscheck.');
         }
 
-               if ($action === 'signup') {
+                       if ($action === 'signup') {
             $ok = $this->do_signup($event_id, $user_id);
 
             if ($ok) {
+                $this->send_signup_emails($event_id, $user_id);
                 $this->redirect_back('Aangemeld ✅');
             } else {
                 $reason = $this->get_signup_block_reason($event_id, $user_id);

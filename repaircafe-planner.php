@@ -943,11 +943,51 @@ $this->redirect_back($ok ? 'Afgemeld ✅' : 'Afmelden mislukt ❌');
             $out .= "</div>";
         }
 
-        $out .= "</div>";
+                $out .= "</div>";
         return $out;
     }
 
-                
+    private function render_buttons($event_id, $compact = false) {
+        if (!is_user_logged_in()) {
+            $login = wp_login_url(get_permalink());
+            return '<a class="rc-btn" href="' . esc_url($login) . '">Inloggen om aan te melden</a>';
+        }
+
+        $user_id = get_current_user_id();
+        $signed  = $this->is_signed_up($event_id, $user_id);
+
+        if (!$signed) {
+            if ($this->is_full($event_id)) {
+                return '<span class="rc-note">Dit event zit vol.</span>';
+            }
+
+            $block_reason = $this->get_signup_block_reason($event_id, $user_id);
+            if ($block_reason !== '') {
+                return '<span class="rc-note">' . esc_html($block_reason) . '</span>';
+            }
+
+            $url = add_query_arg([
+                'rc_action' => 'signup',
+                'event_id'  => $event_id,
+                '_wpnonce'  => wp_create_nonce('rc_signup_' . $event_id),
+            ], home_url('/'));
+
+            return '<a class="rc-btn" href="' . esc_url($url) . '">Aanmelden</a>';
+        }
+
+        if (!$this->can_unsubscribe($event_id)) {
+            $contact = $this->get_contact_name();
+            return '<span class="rc-note">Afmelden binnen 24 uur dat het evenement begint kan niet, graag contact opnemen met ' . esc_html($contact) . '.</span>';
+        }
+
+        $url = add_query_arg([
+            'rc_action' => 'unsubscribe',
+            'event_id'  => $event_id,
+            '_wpnonce'  => wp_create_nonce('rc_unsubscribe_' . $event_id),
+        ], home_url('/'));
+
+        return '<a class="rc-btn rc-btn-secondary" href="' . esc_url($url) . '">Afmelden</a>';
+    }
 
     /* -------------------- Admin menu -------------------- */
     public function admin_menu() {

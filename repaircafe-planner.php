@@ -625,7 +625,16 @@ private function get_email_template($title, $intro, $rows = [], $footer = '') {
         $pretty_date = date_i18n('l d-m-Y', strtotime($event_date));
     }
 
-   
+    $expertise = $this->get_user_expertise_ids($user_id);
+    $expertise_name = '';
+
+    if (!empty($expertise)) {
+        global $wpdb;
+        $expertise_name = (string) $wpdb->get_var($wpdb->prepare(
+            "SELECT name FROM {$wpdb->prefix}rcp_expertises WHERE id = %d LIMIT 1",
+            (int) $expertise[0]
+        ));
+    }
 
     $headers = ['Content-Type: text/html; charset=UTF-8'];
 
@@ -667,69 +676,6 @@ private function get_email_template($title, $intro, $rows = [], $footer = '') {
     }
 }
 
-        $expertise = $this->get_user_expertise_ids($user_id);
-        $expertise_name = '';
-
-        if (!empty($expertise)) {
-            global $wpdb;
-            $expertise_name = (string) $wpdb->get_var($wpdb->prepare(
-                "SELECT name FROM {$wpdb->prefix}rcp_expertises WHERE id = %d LIMIT 1",
-                (int) $expertise[0]
-            ));
-        }
-
-        $subject_user = 'Bevestiging aanmelding Repair Café';
-        $message_user = "Beste " . $user->display_name . ",\n\n";
-        $message_user .= "Je bent aangemeld voor: " . $event_title . "\n";
-
-        if ($pretty_date) {
-            $message_user .= "Datum: " . $pretty_date . "\n";
-        }
-
-        if ($event_time) {
-            $message_user .= "Tijd: " . $event_time . "\n";
-        }
-
-        if ($location) {
-            $message_user .= "Locatie: " . $location . "\n";
-        }
-
-        if ($expertise_name) {
-            $message_user .= "Expertise: " . $expertise_name . "\n";
-        }
-
-        $message_user .= "\nDank je wel voor je aanmelding.";
-
-        wp_mail($user->user_email, $subject_user, $message_user);
-
-        $admin_email = 'info@repaircaferenkum.nl';
-        if ($admin_email) {
-            $subject_admin = 'Nieuwe aanmelding Repair Café';
-            $message_admin = "Er is een nieuwe aanmelding binnengekomen.\n\n";
-            $message_admin .= "Vrijwilliger: " . $user->display_name . "\n";
-            $message_admin .= "E-mail: " . $user->user_email . "\n";
-            $message_admin .= "Evenement: " . $event_title . "\n";
-
-            if ($pretty_date) {
-                $message_admin .= "Datum: " . $pretty_date . "\n";
-            }
-
-            if ($event_time) {
-                $message_admin .= "Tijd: " . $event_time . "\n";
-            }
-
-            if ($location) {
-                $message_admin .= "Locatie: " . $location . "\n";
-            }
-
-            if ($expertise_name) {
-                $message_admin .= "Expertise: " . $expertise_name . "\n";
-            }
-
-            wp_mail($admin_email, $subject_admin, $message_admin);
-        }
-    }
-
 private function send_unsubscribe_emails($event_id, $user_id) {
     $user = get_user_by('id', (int) $user_id);
     if (!$user) return;
@@ -744,7 +690,16 @@ private function send_unsubscribe_emails($event_id, $user_id) {
         $pretty_date = date_i18n('l d-m-Y', strtotime($event_date));
     }
 
-    
+    $expertise = $this->get_user_expertise_ids($user_id);
+    $expertise_name = '';
+
+    if (!empty($expertise)) {
+        global $wpdb;
+        $expertise_name = (string) $wpdb->get_var($wpdb->prepare(
+            "SELECT name FROM {$wpdb->prefix}rcp_expertises WHERE id = %d LIMIT 1",
+            (int) $expertise[0]
+        ));
+    }
 
     $headers = ['Content-Type: text/html; charset=UTF-8'];
 
@@ -783,69 +738,6 @@ private function send_unsubscribe_emails($event_id, $user_id) {
         );
 
         wp_mail($admin_email, $subject_admin, $message_admin, $headers);
-    }
-}
-
-    $expertise = $this->get_user_expertise_ids($user_id);
-    $expertise_name = '';
-
-    if (!empty($expertise)) {
-        global $wpdb;
-        $expertise_name = (string) $wpdb->get_var($wpdb->prepare(
-            "SELECT name FROM {$wpdb->prefix}rcp_expertises WHERE id = %d LIMIT 1",
-            (int) $expertise[0]
-        ));
-    }
-
-    $subject_user = 'Bevestiging afmelding Repair Café';
-    $message_user = "Beste " . $user->display_name . ",\n\n";
-    $message_user .= "Je bent afgemeld voor: " . $event_title . "\n";
-
-    if ($pretty_date) {
-        $message_user .= "Datum: " . $pretty_date . "\n";
-    }
-
-    if ($event_time) {
-        $message_user .= "Tijd: " . $event_time . "\n";
-    }
-
-    if ($location) {
-        $message_user .= "Locatie: " . $location . "\n";
-    }
-
-    if ($expertise_name) {
-        $message_user .= "Expertise: " . $expertise_name . "\n";
-    }
-
-    $message_user .= "\nJe afmelding is verwerkt.";
-
-    wp_mail($user->user_email, $subject_user, $message_user);
-
-    $admin_email = 'info@repaircaferenkum.nl';
-    if ($admin_email) {
-        $subject_admin = 'Afmelding Repair Café';
-        $message_admin = "Er is een afmelding binnengekomen.\n\n";
-        $message_admin .= "Vrijwilliger: " . $user->display_name . "\n";
-        $message_admin .= "E-mail: " . $user->user_email . "\n";
-        $message_admin .= "Evenement: " . $event_title . "\n";
-
-        if ($pretty_date) {
-            $message_admin .= "Datum: " . $pretty_date . "\n";
-        }
-
-        if ($event_time) {
-            $message_admin .= "Tijd: " . $event_time . "\n";
-        }
-
-        if ($location) {
-            $message_admin .= "Locatie: " . $location . "\n";
-        }
-
-        if ($expertise_name) {
-            $message_admin .= "Expertise: " . $expertise_name . "\n";
-        }
-
-        wp_mail($admin_email, $subject_admin, $message_admin);
     }
 }
     

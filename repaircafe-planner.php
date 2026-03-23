@@ -447,8 +447,8 @@ class RepairCafePlanner {
 
             $out .= "<li class='rc-expertise-item'>";
            $dot = $row->is_full
- ? "<span style='color:red;margin-right:10px;font-size:40px;line-height:0;'>●</span>"
-    : "<span style='color:green;margin-right:10px;font-size:40px;line-height:0;'>●</span>";
+  ? "<span style='color:red;margin-right:10px;font-size:32px;vertical-align:middle;display:inline-block;'>✖</span>"
+    : "<span style='color:green;margin-right:10px;font-size:32px;vertical-align:middle;display:inline-block;'>✔</span>";
 
 $out .= "<span class='rc-expertise-name'>" . $dot . esc_html($row->name) . "</span>";
             $out .= "<span class='rc-expertise-meta'>" . esc_html($status_text) . "</span>";

@@ -457,7 +457,7 @@ class RepairCafePlanner {
         }
 
         $out = "<div class='rc-expertises'>";
-        $out .= "<strong>Expertises:</strong>";
+        $out .= "<strong>Benodigde Vrijwilligers</strong>";
         $out .= "<ul class='rc-expertise-list'>";
 
         foreach ($rows as $row) {

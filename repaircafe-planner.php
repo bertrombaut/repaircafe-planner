@@ -625,16 +625,7 @@ private function get_email_template($title, $intro, $rows = [], $footer = '') {
         $pretty_date = date_i18n('l d-m-Y', strtotime($event_date));
     }
 
-    $expertise = $this->get_user_expertise_ids($user_id);
-    $expertise_name = '';
-
-    if (!empty($expertise)) {
-        global $wpdb;
-        $expertise_name = (string) $wpdb->get_var($wpdb->prepare(
-            "SELECT name FROM {$wpdb->prefix}rcp_expertises WHERE id = %d LIMIT 1",
-            (int) $expertise[0]
-        ));
-    }
+   
 
     $headers = ['Content-Type: text/html; charset=UTF-8'];
 
@@ -753,16 +744,7 @@ private function send_unsubscribe_emails($event_id, $user_id) {
         $pretty_date = date_i18n('l d-m-Y', strtotime($event_date));
     }
 
-    $expertise = $this->get_user_expertise_ids($user_id);
-    $expertise_name = '';
-
-    if (!empty($expertise)) {
-        global $wpdb;
-        $expertise_name = (string) $wpdb->get_var($wpdb->prepare(
-            "SELECT name FROM {$wpdb->prefix}rcp_expertises WHERE id = %d LIMIT 1",
-            (int) $expertise[0]
-        ));
-    }
+    
 
     $headers = ['Content-Type: text/html; charset=UTF-8'];
 
@@ -911,9 +893,13 @@ private function send_unsubscribe_emails($event_id, $user_id) {
                 $this->redirect_back('Afmelden binnen 24 uur dat het evenement begint kan niet, graag contact opnemen met ' . $contact . '.');
             }
 
-            $ok = $this->do_unsubscribe($event_id, $user_id);
-            $this->send_unsubscribe_emails($event_id, $user_id);
-            $this->redirect_back($ok ? 'Afgemeld ✅' : 'Afmelden mislukt ❌');
+           $ok = $this->do_unsubscribe($event_id, $user_id);
+
+if ($ok) {
+    $this->send_unsubscribe_emails($event_id, $user_id);
+}
+
+$this->redirect_back($ok ? 'Afgemeld ✅' : 'Afmelden mislukt ❌');;
         }
     }
 

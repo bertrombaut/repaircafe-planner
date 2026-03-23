@@ -461,13 +461,25 @@ class RepairCafePlanner {
         $out .= "<ul class='rc-expertise-list'>";
 
         foreach ($rows as $row) {
-            $status_text = $row->is_full
-                ? 'vol'
-                : $row->free . ' vrij';
+            if ($row->is_full) {
+    $status_text = 'Vol';
+} else {
+    $count = (int) $row->count;
+    $free  = (int) $row->free;
+    $name  = $row->name;
+
+    $plek_word = ($free === 1) ? 'plek' : 'plekken';
+
+    if ($count === 1) {
+        $status_text = '1 ' . $name . ' heeft zich aangemeld, nog ' . $free . ' ' . $plek_word . ' over';
+    } else {
+        $status_text = $count . ' ' . $name . ' hebben zich aangemeld, nog ' . $free . ' ' . $plek_word . ' over';
+    }
+}
 
             $out .= "<li class='rc-expertise-item'>";
             $out .= "<span class='rc-expertise-name'>" . esc_html($row->name) . "</span>";
-            $out .= "<span class='rc-expertise-meta'>" . esc_html($row->count) . "/" . esc_html($row->max_volunteers) . " bezet · " . esc_html($status_text) . "</span>";
+            $out .= "<span class='rc-expertise-meta'>" . esc_html($status_text) . "</span>";
             $out .= "</li>";
         }
 

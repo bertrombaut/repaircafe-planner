@@ -1043,6 +1043,25 @@ $this->redirect_back($ok ? 'Afgemeld ✅' : 'Afmelden mislukt ❌');
             }
         }
 
+            if (is_user_logged_in()) {
+
+        $logout_url = wp_logout_url(home_url('/'));
+
+        $logout_item = (object) [
+            'ID' => 999999,
+            'title' => 'Uitloggen',
+            'url' => $logout_url,
+            'menu_item_parent' => 0,
+            'type' => '',
+            'object' => '',
+            'object_id' => 0,
+            'db_id' => 0,
+            'classes' => ['menu-item', 'menu-item-logout']
+        ];
+
+        $items[] = $logout_item;
+    }
+        
         return $items;
     }
 

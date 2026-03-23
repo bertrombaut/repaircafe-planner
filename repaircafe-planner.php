@@ -597,9 +597,7 @@ private function get_email_template($title, $intro, $rows = [], $footer = '') {
                 <h2 style="margin:0 0 16px 0;font-size:22px;line-height:1.3;color:#111827;">' . esc_html($title) . '</h2>
                 <p style="margin:0 0 20px 0;color:#374151;line-height:1.7;">' . nl2br(esc_html($intro)) . '</p>
 
-                <table style="width:100%;border-collapse:collapse;">
-                    ' . $rows_html . '
-                </table>
+                table style="width:100%;border-collapse
 
                 ' . $footer_html . '
             </div>

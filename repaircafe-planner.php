@@ -573,101 +573,14 @@ private function get_email_template($title, $intro, $rows = [], $footer = '') {
     $rows_html = '';
 
     foreach ($rows as $label => $value) {
-        if ($value === '' || $value === null) {
-            continue;
-        }
+        if ($value === '' || $value === null) continue;
 
         $rows_html .= '
             <tr>
-                <td style="padding:10px 0;font-weight:600;width:150px;vertical-align:top;color:#111827;">' . esc_html($label) . '</td>
-                <td style="padding:10px 0;vertical-align:top;color:#374151;">' . nl2br(esc_html($value)) . '</td>
+                <td style="padding:8px 0;font-weight:600;width:140px;vertical-align:top;">' . esc_html($label) . '</td>
+                <td style="padding:8px 0;vertical-align:top;">' . nl2br(esc_html($value)) . '</td>
             </tr>';
     }
-
-    $footer_html = '';
-    if ($footer !== '') {
-        $footer_html = '<p style="margin:24px 0 0 0;color:#4b5563;line-height:1.7;font-size:15px;">' . nl2br(esc_html($footer)) . '</p>';
-    }
-
-    return '
-    <div style="margin:0;padding:32px 16px;background:#f3f4f6;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">
-        <div style="max-width:680px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:18px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,0.06);">
-            <div style="background:#ffffff;border-top:6px solid #f46e16;padding:24px 28px 18px 28px;text-align:center;">
-                <img src="https://repaircaferenkum.nl/wp-content/uploads/2025/12/Schermafbeelding-2025-01-19-130003.jpg" alt="Repair Café Renkum/Heelsum" style="max-height:72px;width:auto;display:block;margin:0 auto 12px auto;">
-                <div style="font-size:22px;line-height:1.3;font-weight:700;color:#111827;">Repair Café Renkum/Heelsum</div>
-                <div style="margin-top:6px;font-size:14px;color:#6b7280;">Samen repareren is beter dan weggooien</div>
-            </div>
-
-            <div style="padding:32px 28px 28px 28px;">
-                <h2 style="margin:0 0 16px 0;font-size:24px;line-height:1.3;color:#111827;">' . esc_html($title) . '</h2>
-                <p style="margin:0 0 24px 0;color:#374151;line-height:1.8;font-size:15px;">' . nl2br(esc_html($intro)) . '</p>
-
-                <div style="background:#fff7f2;border:1px solid #fed7aa;border-radius:14px;padding:18px 20px;">
-                    <table style="width:100%;border-collapse:collapse;">
-                        ' . $rows_html . '
-                    </table>
-                </div>
-
-                ' . $footer_html . '
-            </div>
-
-            <div style="padding:18px 28px;background:#fafafa;border-top:1px solid #e5e7eb;text-align:center;">
-                <div style="font-size:13px;color:#6b7280;line-height:1.6;">Dit is een automatische e-mail van Repair Café Renkum/Heelsum.</div>
-            </div>
-        </div>
-    </div>';
-}
-
-        $rows_html .= '
-            <tr>
-                <td style="padding:10px 0;font-weight:600;width:150px;vertical-align:top;color:#111827;">' . esc_html($label) . '</td>
-                <td style="padding:10px 0;vertical-align:top;color:#374151;">' . nl2br(esc_html($value)) . '</td>
-            </tr>';
-    }
-
-    $footer_html = $footer !== ''
-        ? '<p style="margin:24px 0 0 0;color:#4b5563;line-height:1.7;font-size:15px;">' . nl2br(esc_html($footer)) . '</p>'
-        : '';
-
-    return '
-    <div style="margin:0;padding:32px 16px;background:#f3f4f6;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">
-        <div style="max-width:680px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:18px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,0.06);">
-            
-            <div style="background:#ffffff;border-top:6px solid #f46e16;padding:24px 28px 18px 28px;text-align:center;">
-                <img src="http://repaircaferenkum.nl/wp-content/uploads/2025/12/Schermafbeelding-2025-01-19-130003.jpg"
-                     alt="Repair Café Renkum/Heelsum"
-                     style="max-height:72px;width:auto;display:block;margin:0 auto 12px auto;">
-                <div style="font-size:22px;line-height:1.3;font-weight:700;color:#111827;">
-                    Repair Café Renkum/Heelsum
-                </div>
-                <div style="margin-top:6px;font-size:14px;color:#6b7280;">
-                    Samen repareren is beter dan weggooien
-                </div>
-            </div>
-
-            <div style="padding:32px 28px 28px 28px;">
-                <h2 style="margin:0 0 16px 0;font-size:24px;line-height:1.3;color:#111827;">' . esc_html($title) . '</h2>
-
-                <p style="margin:0 0 24px 0;color:#374151;line-height:1.8;font-size:15px;">' . nl2br(esc_html($intro)) . '</p>
-
-                <div style="background:#fff7f2;border:1px solid #fed7aa;border-radius:14px;padding:18px 20px;">
-                    <table style="width:100%;border-collapse:collapse;">
-                        ' . $rows_html . '
-                    </table>
-                </div>
-
-                ' . $footer_html . '
-            </div>
-
-            <div style="padding:18px 28px;background:#fafafa;border-top:1px solid #e5e7eb;text-align:center;">
-                <div style="font-size:13px;color:#6b7280;line-height:1.6;">
-                    Dit is een automatische e-mail van Repair Café Renkum/Heelsum.
-                </div>
-            </div>
-
-        </div>
-    </div>';
-}
 
     $footer_html = $footer !== ''
         ? '<p style="margin:24px 0 0 0;color:#555;line-height:1.6;">' . nl2br(esc_html($footer)) . '</p>'

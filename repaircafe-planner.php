@@ -461,20 +461,21 @@ class RepairCafePlanner {
         $out .= "<ul class='rc-expertise-list'>";
 
         foreach ($rows as $row) {
-            if ($row->is_full) {
-    $status_text = 'Vol';
+           $count = (int) $row->count;
+$free  = (int) $row->free;
+$name  = $row->name;
+$plek_word = ($free === 1) ? 'plek' : 'plekken';
+
+if ($row->is_full) {
+    $status_text = '<span class="rc-dot rc-dot-red"></span><span class="rc-vol">Vol</span>';
 } else {
-    $count = (int) $row->count;
-    $free  = (int) $row->free;
-    $name  = $row->name;
-
-    $plek_word = ($free === 1) ? 'plek' : 'plekken';
-
     if ($count === 1) {
-        $status_text = '1 ' . $name . ' heeft zich aangemeld, nog ' . $free . ' ' . $plek_word . ' over';
+        $text = '1 ' . $name . ' heeft zich aangemeld, nog ' . $free . ' ' . $plek_word . ' over';
     } else {
-        $status_text = $count . ' ' . $name . ' hebben zich aangemeld, nog ' . $free . ' ' . $plek_word . ' over';
+        $text = $count . ' ' . $name . ' hebben zich aangemeld, nog ' . $free . ' ' . $plek_word . ' over';
     }
+
+    $status_text = '<span class="rc-dot rc-dot-green"></span>' . esc_html($text);
 }
 
             $out .= "<li class='rc-expertise-item'>";
@@ -1192,6 +1193,28 @@ $this->redirect_back($ok ? 'Afgemeld ✅' : 'Afmelden mislukt ❌');;
             .rc-btn:hover{filter:brightness(0.95);}
             .rc-btn-secondary{background:#fff;color:#2c7be5;}
             .rc-note{display:inline-block;padding:10px;border:1px solid #ddd;border-radius:10px;background:#fff;color:#333;}
+           .rc-dot{
+    width:10px;
+    height:10px;
+    border-radius:50%;
+    display:inline-block;
+    margin-right:6px;
+}
+
+.rc-dot-green{
+    background:#16a34a;
+}
+
+.rc-dot-red{
+    background:#dc2626;
+}
+
+.rc-vol{
+    font-weight:600;
+    color:#991b1b;
+    margin-left:4px;
+}
+            
             @media (max-width: 640px){
                 .rc-expertise-item{display:block;}
                 .rc-expertise-meta{display:block;text-align:left;margin-top:4px;}

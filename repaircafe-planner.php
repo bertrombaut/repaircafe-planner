@@ -768,6 +768,7 @@ private function send_unsubscribe_emails($event_id, $user_id) {
             }
 
             $ok = $this->do_unsubscribe($event_id, $user_id);
+            $this->send_unsubscribe_emails($event_id, $user_id);
             $this->redirect_back($ok ? 'Afgemeld ✅' : 'Afmelden mislukt ❌');
         }
     }

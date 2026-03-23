@@ -377,76 +377,45 @@ class RepairCafePlanner {
         return $result;
     }
 
-         private function get_user_expertise_ids($user_id) {
+             private function get_user_expertise_id($user_id) {
         global $wpdb;
 
-        $rows = $wpdb->get_col($wpdb->prepare(
+        $expertise_id = $wpdb->get_var($wpdb->prepare(
             "SELECT expertise_id
              FROM {$wpdb->prefix}rcp_user_expertises
              WHERE user_id = %d
-             ORDER BY expertise_id ASC",
+             LIMIT 1",
             $user_id
         ));
 
-        if (empty($rows)) {
-            return [];
-        }
-
-        return array_map('intval', $rows);
+        return $expertise_id ? (int) $expertise_id : 0;
     }
 
-        private function get_signup_block_reason($event_id, $user_id, $expertise_id = 0) {
+           private function get_signup_block_reason($event_id, $user_id) {
         $event_expertises = $this->get_event_expertise_statuses($event_id);
 
         if (empty($event_expertises)) {
             return 'Voor dit evenement zijn nog geen expertises ingesteld.';
         }
 
-        $user_expertise_ids = $this->get_user_expertise_ids($user_id);
+        $user_expertise_id = $this->get_user_expertise_id($user_id);
 
-        if (empty($user_expertise_ids)) {
+        if ($user_expertise_id <= 0) {
             return 'Je hebt nog geen expertise gekoppeld aan je account.';
         }
 
-        $matching_rows = [];
-
         foreach ($event_expertises as $row) {
-            if (in_array((int) $row->expertise_id, $user_expertise_ids, true)) {
-                $matching_rows[] = $row;
-            }
-        }
-
-        if (empty($matching_rows)) {
-            return 'Jouw expertise past niet bij dit evenement.';
-        }
-
-        if ($expertise_id > 0) {
-            if (!in_array((int) $expertise_id, $user_expertise_ids, true)) {
-                return 'Deze expertise hoort niet bij jouw account.';
-            }
-
-            foreach ($matching_rows as $row) {
-                if ((int) $row->expertise_id === (int) $expertise_id) {
-                    if ($row->is_full) {
-                        return 'Voor deze expertise is geen plek meer.';
-                    }
-
-                    return '';
+            if ((int) $row->expertise_id === $user_expertise_id) {
+                if ($row->is_full) {
+                    return 'Voor jouw expertise is geen plek meer.';
                 }
-            }
 
-            return 'Deze expertise past niet bij dit evenement.';
-        }
-
-        foreach ($matching_rows as $row) {
-            if (!$row->is_full) {
                 return '';
             }
         }
 
-        return 'Alle plekken voor jouw expertise(s) zijn al bezet.';
+        return 'Jouw expertise past niet bij dit evenement.';
     }
-
 
     private function render_expertise_statuses($event_id) {
         $rows = $this->get_event_expertise_statuses($event_id);
@@ -513,7 +482,7 @@ class RepairCafePlanner {
         return (int) $wpdb->get_var($sql);
     }
 
-        private function do_signup($event_id, $user_id, $expertise_id = 0) {
+            private function do_signup($event_id, $user_id) {
         global $wpdb;
         $table = $this->table_name();
 
@@ -525,12 +494,12 @@ class RepairCafePlanner {
             return false;
         }
 
-        $user_expertise_ids = $this->get_user_expertise_ids($user_id);
-        if ($expertise_id <= 0 && !empty($user_expertise_ids)) {
-            $expertise_id = (int) $user_expertise_ids[0];
+        $expertise_id = $this->get_user_expertise_id($user_id);
+        if ($expertise_id <= 0) {
+            return false;
         }
 
-        $block_reason = $this->get_signup_block_reason($event_id, $user_id, $expertise_id);
+        $block_reason = $this->get_signup_block_reason($event_id, $user_id);
         if ($block_reason !== '') {
             return false;
         }
@@ -638,14 +607,14 @@ private function get_email_template($title, $intro, $rows = [], $footer = '') {
         $pretty_date = date_i18n('l d-m-Y', strtotime($event_date));
     }
 
-    $expertise = $this->get_user_expertise_ids($user_id);
+        $expertise_id   = $this->get_user_expertise_id($user_id);
     $expertise_name = '';
 
-    if (!empty($expertise)) {
+    if ($expertise_id > 0) {
         global $wpdb;
         $expertise_name = (string) $wpdb->get_var($wpdb->prepare(
             "SELECT name FROM {$wpdb->prefix}rcp_expertises WHERE id = %d LIMIT 1",
-            (int) $expertise[0]
+            $expertise_id
         ));
     }
 
@@ -703,14 +672,14 @@ private function send_unsubscribe_emails($event_id, $user_id) {
         $pretty_date = date_i18n('l d-m-Y', strtotime($event_date));
     }
 
-    $expertise = $this->get_user_expertise_ids($user_id);
+        $expertise_id   = $this->get_user_expertise_id($user_id);
     $expertise_name = '';
 
-    if (!empty($expertise)) {
+    if ($expertise_id > 0) {
         global $wpdb;
         $expertise_name = (string) $wpdb->get_var($wpdb->prepare(
             "SELECT name FROM {$wpdb->prefix}rcp_expertises WHERE id = %d LIMIT 1",
-            (int) $expertise[0]
+            $expertise_id
         ));
     }
 
@@ -759,8 +728,7 @@ private function send_unsubscribe_emails($event_id, $user_id) {
               if (empty($_REQUEST['rc_action'])) return;
 
                $action       = sanitize_text_field($_REQUEST['rc_action'] ?? '');
-        $event_id     = isset($_REQUEST['event_id']) ? (int) $_REQUEST['event_id'] : 0;
-        $expertise_id = isset($_REQUEST['expertise_id']) ? (int) $_REQUEST['expertise_id'] : 0;
+                $event_id = isset($_REQUEST['event_id']) ? (int) $_REQUEST['event_id'] : 0;;
 
         if (!$event_id) return;
 
@@ -775,14 +743,14 @@ private function send_unsubscribe_emails($event_id, $user_id) {
             wp_die('Ongeldige beveiligingscheck.');
         }
 
-                               if ($action === 'signup') {
-            $ok = $this->do_signup($event_id, $user_id, $expertise_id);
+                                       if ($action === 'signup') {
+            $ok = $this->do_signup($event_id, $user_id);
 
             if ($ok) {
                 $this->send_signup_emails($event_id, $user_id);
                 $this->redirect_back('Aangemeld ✅');
             } else {
-                $reason = $this->get_signup_block_reason($event_id, $user_id, $expertise_id);
+                $reason = $this->get_signup_block_reason($event_id, $user_id);
 
                 if ($reason !== '') {
                     $this->redirect_back($reason);
@@ -979,96 +947,7 @@ $this->redirect_back($ok ? 'Afgemeld ✅' : 'Afmelden mislukt ❌');
         return $out;
     }
 
-                  private function render_buttons($event_id, $compact = false) {
-        if (!is_user_logged_in()) {
-            $login = wp_login_url(get_permalink());
-            return '<a class="rc-btn" href="' . esc_url($login) . '">Inloggen om aan te melden</a>';
-        }
-
-        $user_id = get_current_user_id();
-        $signed  = $this->is_signed_up($event_id, $user_id);
-
-        if (!$signed) {
-            if ($this->is_full($event_id)) {
-                return '<span class="rc-note">Dit event zit vol.</span>';
-            }
-
-            $event_expertises   = $this->get_event_expertise_statuses($event_id);
-            $user_expertise_ids = $this->get_user_expertise_ids($user_id);
-            $available_rows     = [];
-
-            foreach ($event_expertises as $row) {
-                if (
-                    in_array((int) $row->expertise_id, $user_expertise_ids, true) &&
-                    !$row->is_full
-                ) {
-                    $available_rows[] = $row;
-                }
-            }
-
-            if (empty($available_rows)) {
-                $block_reason = $this->get_signup_block_reason($event_id, $user_id);
-                return '<span class="rc-note">' . esc_html($block_reason) . '</span>';
-            }
-
-            if (count($available_rows) === 1) {
-                $chosen_expertise_id = (int) $available_rows[0]->expertise_id;
-
-                $url = add_query_arg([
-                    'rc_action'    => 'signup',
-                    'event_id'     => $event_id,
-                    'expertise_id' => $chosen_expertise_id,
-                    '_wpnonce'     => wp_create_nonce('rc_signup_' . $event_id),
-                ], home_url('/'));
-
-                return '<a class="rc-btn" href="' . esc_url($url) . '">Aanmelden</a>';
-            }
-
-            $out = '<div class="rc-multi-signup">';
-            $out .= '<div class="rc-note" style="margin-bottom:8px;">Kies je expertise om je aan te melden:</div>';
-
-            foreach ($available_rows as $row) {
-                $url = add_query_arg([
-                    'rc_action'    => 'signup',
-                    'event_id'     => $event_id,
-                    'expertise_id' => (int) $row->expertise_id,
-                    '_wpnonce'     => wp_create_nonce('rc_signup_' . $event_id),
-                ], home_url('/'));
-
-                $out .= '<a class="rc-btn" style="margin:0 8px 8px 0;" href="' . esc_url($url) . '">Aanmelden als ' . esc_html($row->name) . '</a>';
-            }
-
-            $out .= '</div>';
-            return $out;
-        }
-
-        if (!$this->can_unsubscribe($event_id)) {
-            $contact = $this->get_contact_name();
-            return '<span class="rc-note">Afmelden binnen 24 uur dat het evenement begint kan niet, graag contact opnemen met ' . esc_html($contact) . '.</span>';
-        }
-
-        $url = add_query_arg([
-            'rc_action' => 'unsubscribe',
-            'event_id'  => $event_id,
-            '_wpnonce'  => wp_create_nonce('rc_unsubscribe_' . $event_id),
-        ], home_url('/'));
-
-        return '<a class="rc-btn rc-btn-secondary" href="' . esc_url($url) . '">Afmelden</a>';
-    }
-
-        if (!$this->can_unsubscribe($event_id)) {
-            $contact = $this->get_contact_name();
-            return '<span class="rc-note">Afmelden binnen 24 uur dat het evenement begint kan niet, graag contact opnemen met ' . esc_html($contact) . '.</span>';
-        }
-
-        $url = add_query_arg([
-            'rc_action' => 'unsubscribe',
-            'event_id'  => $event_id,
-            '_wpnonce'  => wp_create_nonce('rc_unsubscribe_' . $event_id),
-        ], home_url('/'));
-
-        return '<a class="rc-btn rc-btn-secondary" href="' . esc_url($url) . '">Afmelden</a>';
-    }
+                
 
     /* -------------------- Admin menu -------------------- */
     public function admin_menu() {

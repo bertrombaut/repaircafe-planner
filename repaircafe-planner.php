@@ -618,7 +618,7 @@ class RepairCafePlanner {
 
         wp_mail($user->user_email, $subject_user, $message_user);
 
-        $admin_email = get_option('admin_email');
+        $admin_email = 'info@repaircaferenkum.nl';
         if ($admin_email) {
             $subject_admin = 'Nieuwe aanmelding Repair Café';
             $message_admin = "Er is een nieuwe aanmelding binnengekomen.\n\n";

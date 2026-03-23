@@ -590,7 +590,7 @@ private function get_email_template($title, $intro, $rows = [], $footer = '') {
     <div style="margin:0;padding:24px;background:#f5f7fb;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">
         <div style="max-width:680px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:16px;overflow:hidden;">
             <div style="background:#f46e16;padding:24px 28px;color:#ffffff;">
-                <h1 style="margin:0;font-size:24px;line-height:1.3;">Repair Café Renkum/Heelsum</h1>
+                 <img src="http://repaircaferenkum.nl/wp-content/uploads/2025/12/Schermafbeelding-2025-01-19-130003-300x153.jpg" alt="Repair Café" style="max-height:60px;">
             </div>
 
             <div style="padding:28px;">

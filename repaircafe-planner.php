@@ -593,7 +593,7 @@ private function get_email_template($title, $intro, $rows = [], $footer = '') {
                  <h1 style="margin:0;font-size:24px;line-height:1.3;">Repair Café Renkum/Heelsum</h1>
             </div>
 
-            <div style="padding:28px;">
+            <div style="padding:32px 28px 28px 28px;">
                 <h2 style="margin:0 0 16px 0;font-size:22px;line-height:1.3;color:#111827;">' . esc_html($title) . '</h2>
                 <p style="margin:0 0 20px 0;color:#374151;line-height:1.7;">' . nl2br(esc_html($intro)) . '</p>
 

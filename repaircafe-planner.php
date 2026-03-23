@@ -30,8 +30,12 @@ class RepairCafePlanner {
         add_action('admin_init', [$this, 'register_settings']);
         add_shortcode('repaircafe_events', [$this, 'shortcode_events']);
         add_shortcode('rc_my_signups', [$this, 'shortcode_my_signups']);
+        add_shortcode('rc_login_form', [$this, 'shortcode_login_form']);
 
         add_action('wp_enqueue_scripts', [$this, 'enqueue_styles']);
+        add_filter('wp_nav_menu_objects', [$this, 'filter_menu_items'], 10, 2);
+        add_action('admin_init', [$this, 'block_volunteer_backend']);
+        add_filter('show_admin_bar', [$this, 'hide_admin_bar_for_volunteers']);
     }
 
     private function table_name() {
@@ -736,9 +740,10 @@ private function send_unsubscribe_emails($event_id, $user_id) {
 
         if (!$event_id) return;
 
-        if (!is_user_logged_in()) {
-            $this->redirect_back('Log in om je aan te melden.');
-        }
+       if (!is_user_logged_in()) {
+    $login = home_url('/inloggen/');
+    return '<a class="rc-btn" href="' . esc_url($login) . '">Inloggen om aan te melden</a>';
+}
 
         $user_id = get_current_user_id();
         $nonce   = $_REQUEST['_wpnonce'] ?? '';
@@ -890,10 +895,10 @@ $this->redirect_back($ok ? 'Afgemeld ✅' : 'Afmelden mislukt ❌');
     }
 
     public function shortcode_my_signups() {
-        if (!is_user_logged_in()) {
-            $login = wp_login_url(get_permalink());
-            return '<p>Log in om je aanmeldingen te zien. <a href="' . esc_url($login) . '">Inloggen</a></p>';
-        }
+       if (!is_user_logged_in()) {
+    $login = home_url('/inloggen/');
+    return '<p><a class="rc-btn" href="' . esc_url($login) . '">Log in om je aanmeldingen te bekijken</a></p>';
+}
 
         global $wpdb;
         $table   = $this->table_name();
@@ -953,9 +958,9 @@ $this->redirect_back($ok ? 'Afgemeld ✅' : 'Afmelden mislukt ❌');
 
     private function render_buttons($event_id, $compact = false) {
         if (!is_user_logged_in()) {
-            $login = wp_login_url(get_permalink());
-            return '<a class="rc-btn" href="' . esc_url($login) . '">Inloggen om aan te melden</a>';
-        }
+    $login = home_url('/inloggen/');
+    return '<p><a class="rc-btn" href="' . esc_url($login) . '">Log in om de Repair Cafe Dagen te bekijken</a></p>';
+}
 
         $user_id = get_current_user_id();
         $signed  = $this->is_signed_up($event_id, $user_id);
@@ -993,6 +998,79 @@ $this->redirect_back($ok ? 'Afgemeld ✅' : 'Afmelden mislukt ❌');
         return '<a class="rc-btn rc-btn-secondary" href="' . esc_url($url) . '">Afmelden</a>';
     }
 
+        public function shortcode_login_form() {
+        if (is_user_logged_in()) {
+            return '<p>Je bent al ingelogd.</p>';
+        }
+
+        $args = [
+            'echo'           => false,
+            'remember'       => true,
+            'redirect'       => home_url('/repair-cafe-dagen/'),
+            'form_id'        => 'rc-loginform',
+            'id_username'    => 'rc-user-login',
+            'id_password'    => 'rc-user-pass',
+            'id_remember'    => 'rc-rememberme',
+            'id_submit'      => 'rc-login-submit',
+            'label_username' => 'E-mailadres of gebruikersnaam',
+            'label_password' => 'Wachtwoord',
+            'label_remember' => 'Ingelogd blijven',
+            'label_log_in'   => 'Inloggen',
+        ];
+
+        $out  = "<div class='rc-card'>";
+        $out .= "<h3>Inloggen</h3>";
+        $out .= wp_login_form($args);
+        $out .= "</div>";
+
+        return $out;
+    }
+
+    public function filter_menu_items($items, $args) {
+        $allowed_logged_in = ['repair cafe dagen', 'aangemeld'];
+
+        foreach ($items as $key => $item) {
+            $title = strtolower(trim($item->title));
+
+            if (is_user_logged_in()) {
+                if (!in_array($title, $allowed_logged_in, true)) {
+                    unset($items[$key]);
+                }
+            } else {
+                if (in_array($title, $allowed_logged_in, true)) {
+                    unset($items[$key]);
+                }
+            }
+        }
+
+        return $items;
+    }
+
+    public function block_volunteer_backend() {
+        if (!is_user_logged_in()) {
+            return;
+        }
+
+        if (wp_doing_ajax()) {
+            return;
+        }
+
+        if (current_user_can('manage_options')) {
+            return;
+        }
+
+        wp_safe_redirect(home_url('/repair-cafe-dagen/'));
+        exit;
+    }
+
+    public function hide_admin_bar_for_volunteers($show) {
+        if (current_user_can('manage_options')) {
+            return $show;
+        }
+
+        return false;
+    }
+    
     /* -------------------- Admin menu -------------------- */
     public function admin_menu() {
         add_submenu_page(

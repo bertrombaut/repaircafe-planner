@@ -602,7 +602,7 @@ private function get_email_template($title, $intro, $rows = [], $footer = '') {
                 ' . $footer_html . '
             </div>
 
-            <div style="padding:18px 28px;background:#f9fafb;border-top:1px solid #e5e7eb;color:#6b7280;font-size:13px;">
+            <div style="padding:18px 28px;background:#fafafa;border-top:1px solid #e5e7eb;color:#6b7280;font-size:13px;text-align:center;">
                 Dit is een automatische e-mail van Repair Café Renkum/Heelsum.
             </div>
         </div>

@@ -447,8 +447,8 @@ class RepairCafePlanner {
 
             $out .= "<li class='rc-expertise-item'>";
            $dot = $row->is_full
-   ? "<span style='color:#e60000 !important;margin-right:10px;font-size:32px;vertical-align:middle;display:inline-block;'>✖</span>"
-    : "<span style='color:#00a000 !important;margin-right:10px;font-size:32px;vertical-align:middle;display:inline-block;'>✔</span>";
+   ? "<span style='margin-right:10px;vertical-align:middle;display:inline-flex;align-items:center;'><svg width='28' height='28' viewBox='0 0 24 24' aria-hidden='true' xmlns='http://www.w3.org/2000/svg'><path fill='#e60000' d='M18.3 5.71a1 1 0 0 1 0 1.41L13.41 12l4.89 4.88a1 1 0 1 1-1.41 1.42L12 13.41l-4.88 4.89a1 1 0 0 1-1.42-1.41L10.59 12 5.7 7.12A1 1 0 0 1 7.12 5.7L12 10.59l4.89-4.88a1 1 0 0 1 1.41 0Z'/></svg></span>"
+    : "<span style='margin-right:10px;vertical-align:middle;display:inline-flex;align-items:center;'><svg width='28' height='28' viewBox='0 0 24 24' aria-hidden='true' xmlns='http://www.w3.org/2000/svg'><path fill='#00a000' d='M9.55 18.3 4.7 13.46a1 1 0 1 1 1.41-1.42l3.44 3.44 8.34-8.34a1 1 0 1 1 1.41 1.41L10.96 18.3a1 1 0 0 1-1.41 0Z'/></svg></span>";
 
 $out .= "<span class='rc-expertise-name'>" . $dot . esc_html($row->name) . "</span>";
             $out .= "<span class='rc-expertise-meta'>" . esc_html($status_text) . "</span>";

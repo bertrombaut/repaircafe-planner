@@ -643,7 +643,7 @@ private function get_email_template($title, $intro, $rows = [], $footer = '') {
     $subject_user = 'Bevestiging aanmelding Repair Café';
     $message_user = $this->get_email_template(
         'Je aanmelding is bevestigd',
-        'Beste ' . $user->display_name . ",\n\nBedankt voor je aanmelding. Hieronder vind je de gegevens van het evenement.",
+        'Beste ' . $user->display_name . ",\n\nBedankt voor je aanmelding. Hieronder vind je de gegevens.",
         [
             'Evenement' => $event_title,
             'Datum'     => $pretty_date,

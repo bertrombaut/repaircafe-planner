@@ -377,23 +377,22 @@ class RepairCafePlanner {
         return $result;
     }
 
-     private function get_user_expertise_ids($user_id) {
+         private function get_user_expertise_ids($user_id) {
         global $wpdb;
 
-        $expertise_id = $wpdb->get_var($wpdb->prepare(
+        $rows = $wpdb->get_col($wpdb->prepare(
             "SELECT expertise_id
              FROM {$wpdb->prefix}rcp_user_expertises
              WHERE user_id = %d
-             ORDER BY expertise_id ASC
-             LIMIT 1",
+             ORDER BY expertise_id ASC",
             $user_id
         ));
 
-        if (!$expertise_id) {
+        if (empty($rows)) {
             return [];
         }
 
-        return [(int) $expertise_id];
+        return array_map('intval', $rows);
     }
 
         private function get_signup_block_reason($event_id, $user_id, $expertise_id = 0) {
@@ -776,14 +775,14 @@ private function send_unsubscribe_emails($event_id, $user_id) {
             wp_die('Ongeldige beveiligingscheck.');
         }
 
-                       if ($action === 'signup') {
-            $ok = $this->do_signup($event_id, $user_id);
+                               if ($action === 'signup') {
+            $ok = $this->do_signup($event_id, $user_id, $expertise_id);
 
             if ($ok) {
                 $this->send_signup_emails($event_id, $user_id);
                 $this->redirect_back('Aangemeld ✅');
             } else {
-                $reason = $this->get_signup_block_reason($event_id, $user_id);
+                $reason = $this->get_signup_block_reason($event_id, $user_id, $expertise_id);
 
                 if ($reason !== '') {
                     $this->redirect_back($reason);
@@ -805,7 +804,7 @@ if ($ok) {
     $this->send_unsubscribe_emails($event_id, $user_id);
 }
 
-$this->redirect_back($ok ? 'Afgemeld ✅' : 'Afmelden mislukt ❌');;
+$this->redirect_back($ok ? 'Afgemeld ✅' : 'Afmelden mislukt ❌');
         }
     }
 

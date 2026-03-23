@@ -569,19 +569,112 @@ class RepairCafePlanner {
         exit;
     }
 
+private function get_email_template($title, $intro, $rows = [], $footer = '') {
+    $rows_html = '';
+
+    foreach ($rows as $label => $value) {
+        if ($value === '' || $value === null) continue;
+
+        $rows_html .= '
+            <tr>
+                <td style="padding:8px 0;font-weight:600;width:140px;vertical-align:top;">' . esc_html($label) . '</td>
+                <td style="padding:8px 0;vertical-align:top;">' . nl2br(esc_html($value)) . '</td>
+            </tr>';
+    }
+
+    $footer_html = $footer !== ''
+        ? '<p style="margin:24px 0 0 0;color:#555;line-height:1.6;">' . nl2br(esc_html($footer)) . '</p>'
+        : '';
+
+    return '
+    <div style="margin:0;padding:24px;background:#f5f7fb;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">
+        <div style="max-width:680px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:16px;overflow:hidden;">
+            <div style="background:#2c7be5;padding:24px 28px;color:#ffffff;">
+                <h1 style="margin:0;font-size:24px;line-height:1.3;">Repair Café Renkum</h1>
+            </div>
+
+            <div style="padding:28px;">
+                <h2 style="margin:0 0 16px 0;font-size:22px;line-height:1.3;color:#111827;">' . esc_html($title) . '</h2>
+                <p style="margin:0 0 20px 0;color:#374151;line-height:1.7;">' . nl2br(esc_html($intro)) . '</p>
+
+                <table style="width:100%;border-collapse:collapse;">
+                    ' . $rows_html . '
+                </table>
+
+                ' . $footer_html . '
+            </div>
+
+            <div style="padding:18px 28px;background:#f9fafb;border-top:1px solid #e5e7eb;color:#6b7280;font-size:13px;">
+                Dit is een automatische e-mail van Repair Café Renkum.
+            </div>
+        </div>
+    </div>';
+}
+    
     private function send_signup_emails($event_id, $user_id) {
-        $user = get_user_by('id', (int) $user_id);
-        if (!$user) return;
+    $user = get_user_by('id', (int) $user_id);
+    if (!$user) return;
 
-        $event_title = get_the_title($event_id);
-        $event_date  = get_post_meta($event_id, '_rc_event_date', true);
-        $event_time  = get_post_meta($event_id, '_rc_event_time', true);
-        $location    = wp_strip_all_tags(str_replace('<br>', ', ', $this->format_location($event_id)));
+    $event_title = get_the_title($event_id);
+    $event_date  = get_post_meta($event_id, '_rc_event_date', true);
+    $event_time  = get_post_meta($event_id, '_rc_event_time', true);
+    $location    = wp_strip_all_tags(str_replace('<br>', ', ', $this->format_location($event_id)));
 
-        $pretty_date = '';
-        if ($event_date) {
-            $pretty_date = date_i18n('l d-m-Y', strtotime($event_date));
-        }
+    $pretty_date = '';
+    if ($event_date) {
+        $pretty_date = date_i18n('l d-m-Y', strtotime($event_date));
+    }
+
+    $expertise = $this->get_user_expertise_ids($user_id);
+    $expertise_name = '';
+
+    if (!empty($expertise)) {
+        global $wpdb;
+        $expertise_name = (string) $wpdb->get_var($wpdb->prepare(
+            "SELECT name FROM {$wpdb->prefix}rcp_expertises WHERE id = %d LIMIT 1",
+            (int) $expertise[0]
+        ));
+    }
+
+    $headers = ['Content-Type: text/html; charset=UTF-8'];
+
+    $subject_user = 'Bevestiging aanmelding Repair Café';
+    $message_user = $this->get_email_template(
+        'Je aanmelding is bevestigd',
+        'Beste ' . $user->display_name . ",\n\nBedankt voor je aanmelding. Hieronder vind je de gegevens van het evenement.",
+        [
+            'Evenement' => $event_title,
+            'Datum'     => $pretty_date,
+            'Tijd'      => $event_time,
+            'Locatie'   => $location,
+            'Expertise' => $expertise_name,
+        ],
+        "We zien je graag bij het Repair Café.\n\nMet vriendelijke groet,\nRepair Café Renkum"
+    );
+
+    wp_mail($user->user_email, $subject_user, $message_user, $headers);
+
+    $admin_email = 'info@repaircaferenkum.nl';
+    if ($admin_email) {
+        $subject_admin = 'Nieuwe aanmelding Repair Café';
+        $message_admin = $this->get_email_template(
+            'Nieuwe aanmelding ontvangen',
+            'Er is een nieuwe vrijwilliger aangemeld.',
+            [
+                'Vrijwilliger' => $user->display_name,
+                'E-mail'       => $user->user_email,
+                'Evenement'    => $event_title,
+                'Datum'        => $pretty_date,
+                'Tijd'         => $event_time,
+                'Locatie'      => $location,
+                'Expertise'    => $expertise_name,
+            ],
+            "Deze e-mail is automatisch verzonden vanuit de Repair Café Planner."
+        );
+
+        wp_mail($admin_email, $subject_admin, $message_admin, $headers);
+    }
+}
 
         $expertise = $this->get_user_expertise_ids($user_id);
         $expertise_name = '';
@@ -659,6 +752,57 @@ private function send_unsubscribe_emails($event_id, $user_id) {
     if ($event_date) {
         $pretty_date = date_i18n('l d-m-Y', strtotime($event_date));
     }
+
+    $expertise = $this->get_user_expertise_ids($user_id);
+    $expertise_name = '';
+
+    if (!empty($expertise)) {
+        global $wpdb;
+        $expertise_name = (string) $wpdb->get_var($wpdb->prepare(
+            "SELECT name FROM {$wpdb->prefix}rcp_expertises WHERE id = %d LIMIT 1",
+            (int) $expertise[0]
+        ));
+    }
+
+    $headers = ['Content-Type: text/html; charset=UTF-8'];
+
+    $subject_user = 'Bevestiging afmelding Repair Café';
+    $message_user = $this->get_email_template(
+        'Je afmelding is verwerkt',
+        'Beste ' . $user->display_name . ",\n\nJe afmelding is goed ontvangen en verwerkt.",
+        [
+            'Evenement' => $event_title,
+            'Datum'     => $pretty_date,
+            'Tijd'      => $event_time,
+            'Locatie'   => $location,
+            'Expertise' => $expertise_name,
+        ],
+        "Hopelijk zien we je een volgende keer weer.\n\nMet vriendelijke groet,\nRepair Café Renkum"
+    );
+
+    wp_mail($user->user_email, $subject_user, $message_user, $headers);
+
+    $admin_email = 'info@repaircaferenkum.nl';
+    if ($admin_email) {
+        $subject_admin = 'Afmelding Repair Café';
+        $message_admin = $this->get_email_template(
+            'Afmelding ontvangen',
+            'Er is een vrijwilliger afgemeld.',
+            [
+                'Vrijwilliger' => $user->display_name,
+                'E-mail'       => $user->user_email,
+                'Evenement'    => $event_title,
+                'Datum'        => $pretty_date,
+                'Tijd'         => $event_time,
+                'Locatie'      => $location,
+                'Expertise'    => $expertise_name,
+            ],
+            "Deze e-mail is automatisch verzonden vanuit de Repair Café Planner."
+        );
+
+        wp_mail($admin_email, $subject_admin, $message_admin, $headers);
+    }
+}
 
     $expertise = $this->get_user_expertise_ids($user_id);
     $expertise_name = '';

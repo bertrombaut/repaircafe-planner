@@ -728,7 +728,7 @@ private function send_unsubscribe_emails($event_id, $user_id) {
               if (empty($_REQUEST['rc_action'])) return;
 
                $action       = sanitize_text_field($_REQUEST['rc_action'] ?? '');
-                $event_id = isset($_REQUEST['event_id']) ? (int) $_REQUEST['event_id'] : 0;;
+                $event_id = isset($_REQUEST['event_id']) ? (int) $_REQUEST['event_id'] : 0;
 
         if (!$event_id) return;
 

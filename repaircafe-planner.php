@@ -734,58 +734,57 @@ private function send_unsubscribe_emails($event_id, $user_id) {
     
     /* -------------------- Actions: signup/unsubscribe -------------------- */
     public function handle_actions() {
-              if (empty($_REQUEST['rc_action'])) return;
+    if (empty($_REQUEST['rc_action'])) return;
 
-               $action       = sanitize_text_field($_REQUEST['rc_action'] ?? '');
-                $event_id = isset($_REQUEST['event_id']) ? (int) $_REQUEST['event_id'] : 0;
+    $action   = sanitize_text_field($_REQUEST['rc_action'] ?? '');
+    $event_id = isset($_REQUEST['event_id']) ? (int) $_REQUEST['event_id'] : 0;
 
-        if (!$event_id) return;
+    if (!$event_id) return;
 
-       if (!is_user_logged_in()) {
-    $login = home_url('/inloggen/');
-    return '<a class="rc-btn" href="' . esc_url($login) . '">Inloggen om aan te melden</a>';
-}
+    if (!is_user_logged_in()) {
+        wp_safe_redirect(home_url('/inloggen/'));
+        exit;
+    }
 
-        $user_id = get_current_user_id();
-        $nonce   = $_REQUEST['_wpnonce'] ?? '';
+    $user_id = get_current_user_id();
+    $nonce   = $_REQUEST['_wpnonce'] ?? '';
 
-        if (!wp_verify_nonce($nonce, 'rc_' . $action . '_' . $event_id)) {
-            wp_die('Ongeldige beveiligingscheck.');
-        }
+    if (!wp_verify_nonce($nonce, 'rc_' . $action . '_' . $event_id)) {
+        wp_die('Ongeldige beveiligingscheck.');
+    }
 
-                                       if ($action === 'signup') {
-            $ok = $this->do_signup($event_id, $user_id);
+    if ($action === 'signup') {
+        $ok = $this->do_signup($event_id, $user_id);
 
-            if ($ok) {
-                $this->send_signup_emails($event_id, $user_id);
-                $this->redirect_back('Aangemeld ✅');
-            } else {
-                $reason = $this->get_signup_block_reason($event_id, $user_id);
+        if ($ok) {
+            $this->send_signup_emails($event_id, $user_id);
+            $this->redirect_back('Aangemeld ✅');
+        } else {
+            $reason = $this->get_signup_block_reason($event_id, $user_id);
 
-                if ($reason !== '') {
-                    $this->redirect_back($reason);
-                }
-
-                $this->redirect_back('Dit event zit vol. ❌');
-            }
-        }
-
-        if ($action === 'unsubscribe') {
-            if (!$this->can_unsubscribe($event_id)) {
-                $contact = $this->get_contact_name();
-                $this->redirect_back('Afmelden binnen 24 uur dat het evenement begint kan niet, graag contact opnemen met ' . $contact . '.');
+            if ($reason !== '') {
+                $this->redirect_back($reason);
             }
 
-           $ok = $this->do_unsubscribe($event_id, $user_id);
-
-if ($ok) {
-    $this->send_unsubscribe_emails($event_id, $user_id);
-}
-
-$this->redirect_back($ok ? 'Afgemeld ✅' : 'Afmelden mislukt ❌');
+            $this->redirect_back('Dit event zit vol. ❌');
         }
     }
 
+    if ($action === 'unsubscribe') {
+        if (!$this->can_unsubscribe($event_id)) {
+            $contact = $this->get_contact_name();
+            $this->redirect_back('Afmelden binnen 24 uur dat het evenement begint kan niet, graag contact opnemen met ' . $contact . '.');
+        }
+
+        $ok = $this->do_unsubscribe($event_id, $user_id);
+
+        if ($ok) {
+            $this->send_unsubscribe_emails($event_id, $user_id);
+        }
+
+        $this->redirect_back($ok ? 'Afgemeld ✅' : 'Afmelden mislukt ❌');
+    }
+}
     /* -------------------- Shortcodes -------------------- */
     public function shortcode_events() {
         global $wpdb;

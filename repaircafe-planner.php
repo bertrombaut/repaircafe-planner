@@ -331,11 +331,8 @@ class RepairCafePlanner {
     }
 
     private function is_full($event_id) {
-        $max = $this->get_max_volunteers($event_id);
-        if ($max === null) return false;
-
-        return $this->signup_count($event_id) >= $max;
-    }
+    return false;
+}
 
     private function get_event_expertise_statuses($event_id) {
         global $wpdb;

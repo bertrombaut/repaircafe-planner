@@ -403,7 +403,7 @@ class RepairCafePlanner {
             return 'Voor dit evenement zijn nog geen expertises ingesteld.';
         }
 
-        $user_expertise_id = $this->get_user_expertise_id($user_id);
+        $user_expertise_id = $this->get_primary_user_expertise_id($user_id);
 
         if ($user_expertise_id <= 0) {
             return 'Je hebt nog geen expertise gekoppeld aan je account.';
@@ -503,7 +503,7 @@ $out .= "<span class='rc-expertise-name'>" . $dot . esc_html($row->name) . "</sp
             return false;
         }
 
-        $expertise_id = $this->get_user_expertise_id($user_id);
+        $expertise_id = $this->get_primary_user_expertise_id($user_id);
         if ($expertise_id <= 0) {
             return false;
         }
@@ -616,7 +616,7 @@ private function get_email_template($title, $intro, $rows = [], $footer = '') {
         $pretty_date = date_i18n('l d-m-Y', strtotime($event_date));
     }
 
-        $expertise_id   = $this->get_user_expertise_id($user_id);
+        $expertise_id   = $this->get_primary_user_expertise_id($user_id);
     $expertise_name = '';
 
     if ($expertise_id > 0) {
@@ -681,7 +681,7 @@ private function send_unsubscribe_emails($event_id, $user_id) {
         $pretty_date = date_i18n('l d-m-Y', strtotime($event_date));
     }
 
-        $expertise_id   = $this->get_user_expertise_id($user_id);
+        $expertise_id   = $this->get_primary_user_expertise_id($user_id);
     $expertise_name = '';
 
     if ($expertise_id > 0) {

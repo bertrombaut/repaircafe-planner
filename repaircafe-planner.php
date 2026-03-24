@@ -31,6 +31,7 @@ class RepairCafePlanner {
         add_shortcode('repaircafe_events', [$this, 'shortcode_events']);
         add_shortcode('rc_my_signups', [$this, 'shortcode_my_signups']);
         add_shortcode('rc_login_form', [$this, 'shortcode_login_form']);
+        add_shortcode('rc_lost_password_form', [$this, 'shortcode_lost_password_form']);
 
         add_action('wp_enqueue_scripts', [$this, 'enqueue_styles']);
         add_filter('wp_nav_menu_objects', [$this, 'filter_menu_items'], 10, 2);
@@ -1021,6 +1022,7 @@ $this->redirect_back($ok ? 'Afgemeld ✅' : 'Afmelden mislukt ❌');
         $out  = "<div class='rc-card'>";
         $out .= "<h3>Inloggen</h3>";
         $out .= wp_login_form($args);
+        $out .= "<p style='margin-top:10px;'><a href='" . esc_url(home_url('/wachtwoord-vergeten/')) . "'>Wachtwoord vergeten?</a></p>";
         $out .= "<p style='margin-top:10px;'><a href='" . esc_url(wp_lostpassword_url()) . "'>Wachtwoord vergeten?</a></p>";
         $out .= "</div>";
 
@@ -1089,6 +1091,50 @@ $this->redirect_back($ok ? 'Afgemeld ✅' : 'Afmelden mislukt ❌');
         }
 
         return false;
+    }
+
+    public function shortcode_lost_password_form() {
+        if (is_user_logged_in()) {
+            return '<p>Je bent al ingelogd.</p>';
+        }
+
+        $message = '';
+
+        if (!empty($_POST['rc_lost_password_submit'])) {
+            $nonce_ok = isset($_POST['rc_lost_password_nonce']) && wp_verify_nonce($_POST['rc_lost_password_nonce'], 'rc_lost_password_action');
+
+            if (!$nonce_ok) {
+                $message = '<p class="rc-note">De aanvraag kon niet worden gecontroleerd. Probeer het opnieuw.</p>';
+            } else {
+                $user_login = isset($_POST['user_login']) ? sanitize_text_field(wp_unslash($_POST['user_login'])) : '';
+
+                if ($user_login === '') {
+                    $message = '<p class="rc-note">Vul je e-mailadres of gebruikersnaam in.</p>';
+                } else {
+                    $result = retrieve_password($user_login);
+
+                    if (is_wp_error($result)) {
+                        $message = '<p class="rc-note">Er kon geen resetmail worden verstuurd. Controleer je gegevens en probeer het opnieuw.</p>';
+                    } else {
+                        $message = '<p class="rc-note">Als je gegevens bekend zijn, is er een e-mail verstuurd met een link om je wachtwoord opnieuw in te stellen.</p>';
+                    }
+                }
+            }
+        }
+
+        $out  = "<div class='rc-card'>";
+        $out .= "<h3>Wachtwoord vergeten?</h3>";
+        $out .= "<p>Vul je e-mailadres of gebruikersnaam in. Je ontvangt daarna een e-mail om je wachtwoord opnieuw in te stellen.</p>";
+        $out .= $message;
+        $out .= "<form method='post'>";
+        $out .= wp_nonce_field('rc_lost_password_action', 'rc_lost_password_nonce', true, false);
+        $out .= "<p><input type='text' name='user_login' placeholder='E-mailadres of gebruikersnaam' required style='padding:10px;width:100%;max-width:340px;'></p>";
+        $out .= "<p><button type='submit' name='rc_lost_password_submit' value='1' class='rc-btn'>Verstuur resetlink</button></p>";
+        $out .= "<p><a href='" . esc_url(home_url('/inloggen/')) . "'>Terug naar inloggen</a></p>";
+        $out .= "</form>";
+        $out .= "</div>";
+
+        return $out;
     }
     
     /* -------------------- Admin menu -------------------- */

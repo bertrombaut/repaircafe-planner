@@ -1023,7 +1023,6 @@ $this->redirect_back($ok ? 'Afgemeld ✅' : 'Afmelden mislukt ❌');
         $out .= "<h3>Inloggen</h3>";
         $out .= wp_login_form($args);
         $out .= "<p style='margin-top:10px;'><a href='" . esc_url(home_url('/wachtwoord-vergeten/')) . "'>Wachtwoord vergeten?</a></p>";
-        $out .= "<p style='margin-top:10px;'><a href='" . esc_url(wp_lostpassword_url()) . "'>Wachtwoord vergeten?</a></p>";
         $out .= "</div>";
 
         return $out;

@@ -1142,11 +1142,7 @@ $this->redirect_back($ok ? 'Afgemeld ✅' : 'Afmelden mislukt ❌');
         </a>
     </p>";
 }
-        $out .= wp_nonce_field('rc_lost_password_action', 'rc_lost_password_nonce', true, false);
-        $out .= "<p><input type='text' name='user_login' placeholder='E-mailadres of gebruikersnaam' required style='padding:10px;width:100%;max-width:340px;'></p>";
-        $out .= "<p><button type='submit' name='rc_lost_password_submit' value='1' class='rc-btn'>Verstuur resetlink</button></p>";
-        $out .= "<p><a href='" . esc_url(home_url('/inloggen/')) . "'>Terug naar inloggen</a></p>";
-        $out .= "</form>";
+        
         $out .= "</div>";
 
         return $out;

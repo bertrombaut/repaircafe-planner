@@ -382,7 +382,7 @@ class RepairCafePlanner {
         return $result;
     }
 
-             private function get_user_expertise_id($user_id) {
+             private function get_primary_user_expertise_id($user_id) {
         global $wpdb;
 
         $expertise_id = $wpdb->get_var($wpdb->prepare(

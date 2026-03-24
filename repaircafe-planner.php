@@ -1125,7 +1125,23 @@ $this->redirect_back($ok ? 'Afgemeld ✅' : 'Afmelden mislukt ❌');
         $out .= "<h3>Wachtwoord vergeten?</h3>";
         $out .= "<p>Vul je e-mailadres of gebruikersnaam in. Je ontvangt daarna een e-mail om je wachtwoord opnieuw in te stellen.</p>";
         $out .= $message;
+       if (empty($_POST['rc_lost_password_submit'])) {
+
         $out .= "<form method='post'>";
+        $out .= wp_nonce_field('rc_lost_password_action', 'rc_lost_password_nonce', true, false);
+        $out .= "<p><input type='text' name='user_login' placeholder='E-mailadres of gebruikersnaam' required style='padding:10px;width:100%;max-width:340px;'></p>";
+        $out .= "<p><button type='submit' name='rc_lost_password_submit' value='1' class='rc-btn'>Verstuur resetlink</button></p>";
+        $out .= "</form>";
+
+} else {
+
+    $out .= "<p style='margin-top:20px;'>
+        <a href='" . esc_url(home_url('/inloggen/')) . "' 
+           style='display:inline-block;padding:12px 20px;background:#2c7be5;color:#fff;border-radius:5px;text-decoration:none;font-weight:600;'>
+           ← Terug naar inloggen
+        </a>
+    </p>";
+}
         $out .= wp_nonce_field('rc_lost_password_action', 'rc_lost_password_nonce', true, false);
         $out .= "<p><input type='text' name='user_login' placeholder='E-mailadres of gebruikersnaam' required style='padding:10px;width:100%;max-width:340px;'></p>";
         $out .= "<p><button type='submit' name='rc_lost_password_submit' value='1' class='rc-btn'>Verstuur resetlink</button></p>";

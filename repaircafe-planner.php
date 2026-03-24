@@ -1115,7 +1115,7 @@ $this->redirect_back($ok ? 'Afgemeld ✅' : 'Afmelden mislukt ❌');
                     if (is_wp_error($result)) {
                         $message = '<p class="rc-note">Er kon geen resetmail worden verstuurd. Controleer je gegevens en probeer het opnieuw.</p>';
                     } else {
-                        $message = '<p class="rc-note">Als je gegevens bekend zijn, is er een e-mail verstuurd met een link om je wachtwoord opnieuw in te stellen.</p>';
+                        $message = '<p class="rc-note">Als je gegevens bij ons bekend zijn, is er een e-mail naar je verstuurd met een link om je wachtwoord opnieuw in te stellen.</p>';
                     }
                 }
             }

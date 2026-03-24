@@ -1136,11 +1136,11 @@ $this->redirect_back($ok ? 'Afgemeld ✅' : 'Afmelden mislukt ❌');
 } else {
 
     $out .= "<p style='margin-top:20px;'>
-        <a href='" . esc_url(home_url('/inloggen/')) . "' 
-           style='display:inline-block;padding:12px 20px;background:#f46e16;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;box-shadow:0 2px 6px rgba(0,0,0,0.15);'
-           ← Terug naar inloggen
-        </a>
-    </p>";
+    <a href='" . esc_url(home_url('/inloggen/')) . "' 
+       style='display:inline-block;padding:12px 20px;background:#f46e16;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;'>
+       ← Terug naar inloggen
+    </a>
+</p>";
 }
         
         $out .= "</div>";

@@ -31,37 +31,8 @@ function repaircafe_get_event( $event_id ) {
 }
 
 function repaircafe_create_event( $data ) {
-
-    $title       = isset( $data['title'] ) ? sanitize_text_field( wp_unslash( $data['title'] ) ) : '';
-    $event_date  = isset( $data['event_date'] ) ? sanitize_text_field( wp_unslash( $data['event_date'] ) ) : '';
-    $start_time  = isset( $data['start_time'] ) ? sanitize_text_field( wp_unslash( $data['start_time'] ) ) : '';
-    $end_time    = isset( $data['end_time'] ) ? sanitize_text_field( wp_unslash( $data['end_time'] ) ) : '';
-    $location    = isset( $data['location'] ) ? sanitize_text_field( wp_unslash( $data['location'] ) ) : '';
-    $description = isset( $data['description'] ) ? sanitize_textarea_field( wp_unslash( $data['description'] ) ) : '';
-
-    if ( $title === '' ) {
-        return 0;
-    }
-
-    $event_id = wp_insert_post(array(
-        'post_type'    => 'rc_event',
-        'post_status'  => 'publish',
-        'post_title'   => $title,
-        'post_content' => $description,
-    ));
-
-    if ( is_wp_error( $event_id ) || ! $event_id ) {
-        return 0;
-    }
-
-    update_post_meta( $event_id, '_rc_event_date', $event_date );
-    update_post_meta( $event_id, '_rc_event_time', $start_time );
-    update_post_meta( $event_id, '_rc_event_end_time', $end_time );
-    update_post_meta( $event_id, '_rc_location_name', $location );
-
-    return (int) $event_id;
+    return 0;
 }
-
 function repaircafe_delete_event( $event_id ) {
 
     global $wpdb;

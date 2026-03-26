@@ -835,6 +835,12 @@ private function send_unsubscribe_emails($event_id, $user_id) {
         $selected_month = isset($_GET['rc_month']) ? sanitize_text_field($_GET['rc_month']) : date('Y-m');
         $selected_event = isset($_GET['rc_event']) ? absint($_GET['rc_event']) : 0;
 
+             if ($selected_event > 0) {
+    global $wp_query;
+    $wp_query->is_404 = false;
+    status_header(200);
+}
+
         if (!preg_match('/^\d{4}-\d{2}$/', $selected_month)) {
             $selected_month = date('Y-m');
         }

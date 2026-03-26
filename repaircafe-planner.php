@@ -28,7 +28,7 @@ class RepairCafePlanner {
 
         add_action('admin_menu', [$this, 'admin_menu']);
         add_action('admin_init', [$this, 'register_settings']);
-        add_shortcode('rc_calendar', [$this, 'shortcode_calendar']);
+        add_shortcode('repaircafe_events', [$this, 'shortcode_events']);
         add_shortcode('rc_my_signups', [$this, 'shortcode_my_signups']);
         add_shortcode('rc_login_form', [$this, 'shortcode_login_form']);
         add_shortcode('rc_lost_password_form', [$this, 'shortcode_lost_password_form']);
@@ -783,101 +783,44 @@ private function send_unsubscribe_emails($event_id, $user_id) {
     }
 }
     /* -------------------- Shortcodes -------------------- */
-
-    private function get_calendar_events($year, $month) {
-    $start_date = sprintf('%04d-%02d-01', $year, $month);
-    $end_date   = date('Y-m-t', strtotime($start_date));
-
-    $q = new WP_Query([
-        'post_type'      => 'rc_event',
-        'posts_per_page' => -1,
-        'post_status'    => ['publish', 'future'],
-        'meta_key'       => '_rc_event_date',
-        'orderby'        => 'meta_value',
-        'order'          => 'ASC',
-        'meta_query'     => [[
-            'key'     => '_rc_event_date',
-            'value'   => [$start_date, $end_date],
-            'compare' => 'BETWEEN',
-            'type'    => 'DATE',
-        ]],
-    ]);
-
-    $events_by_day = [];
-
-    if ($q->have_posts()) {
-        while ($q->have_posts()) {
-            $q->the_post();
-            $event_id = get_the_ID();
-            $event_date = get_post_meta($event_id, '_rc_event_date', true);
-
-            if (!$event_date) {
-                continue;
-            }
-
-            $day = (int) date('j', strtotime($event_date));
-
-            $events_by_day[$day] = [
-                'id'    => $event_id,
-                'title' => get_the_title(),
-                'date'  => $event_date,
-            ];
-        }
-        wp_reset_postdata();
-    }
-
-    return $events_by_day;
-}
-
-         public function shortcode_calendar() {
+    public function shortcode_events() {
         global $wpdb;
-
-        $selected_month = isset($_GET['rc_month']) ? sanitize_text_field($_GET['rc_month']) : date('Y-m');
-        $selected_event = isset($_GET['rc_event']) ? absint($_GET['rc_event']) : 0;
-
-             if ($selected_event > 0) {
-    global $wp_query;
-    $wp_query->is_404 = false;
-    status_header(200);
-}
-
-        if (!preg_match('/^\d{4}-\d{2}$/', $selected_month)) {
-            $selected_month = date('Y-m');
-        }
-
-        $year  = (int) substr($selected_month, 0, 4);
-        $month = (int) substr($selected_month, 5, 2);
-
-        if ($year < 2000 || $year > 2100 || $month < 1 || $month > 12) {
-            $year  = (int) date('Y');
-            $month = (int) date('m');
-            $selected_month = date('Y-m');
-        }
+        $today = date('Y-m-d');
 
         $out = '';
-
         if (!empty($_GET['rc_msg'])) {
             $out .= '<div class="rc-msg">' . esc_html(rawurldecode($_GET['rc_msg'])) . '</div>';
         }
 
-        if ($selected_event > 0) {
-            $post = get_post($selected_event);
+        $q = new WP_Query([
+            'post_type'      => 'rc_event',
+            'posts_per_page' => 50,
+            'meta_key'       => '_rc_event_date',
+            'orderby'        => 'meta_value',
+            'order'          => 'ASC',
+            'meta_query'     => [[
+                'key'     => '_rc_event_date',
+                'value'   => $today,
+                'compare' => '>=',
+                'type'    => 'DATE',
+            ]],
+        ]);
 
-            if (!$post || $post->post_type !== 'rc_event') {
-                return $out . '<p>Dit evenement bestaat niet.</p>';
-            }
+        if (!$q->have_posts()) {
+            return $out . '<p>Geen toekomstige evenementen gevonden.</p>';
+        }
 
-            $date  = get_post_meta($selected_event, '_rc_event_date', true);
-            $time  = get_post_meta($selected_event, '_rc_event_time', true);
-            $count = $this->signup_count($selected_event);
-            $max   = $this->get_max_volunteers($selected_event);
-            $loc   = $this->format_location($selected_event);
+        while ($q->have_posts()) {
+            $q->the_post();
+            $id = get_the_ID();
 
-            $back_url = add_query_arg('rc_month', $selected_month, home_url('/repair-cafe-dagen/'));
+            $date  = get_post_meta($id, '_rc_event_date', true);
+            $time  = get_post_meta($id, '_rc_event_time', true);
+            $count = $this->signup_count($id);
+            $max   = $this->get_max_volunteers($id);
 
-            $out .= "<p><a href='" . esc_url($back_url) . "' class='rc-btn rc-btn-secondary'>← Terug naar kalender</a></p>";
             $out .= "<div class='rc-card'>";
-            $out .= "<h3>" . esc_html(get_the_title($selected_event)) . "</h3>";
+            $out .= "<h3>" . esc_html(get_the_title()) . "</h3>";
 
             if ($date) {
                 $ts     = strtotime($date);
@@ -897,12 +840,14 @@ private function send_unsubscribe_emails($event_id, $user_id) {
                 $out .= "</p>";
             }
 
+            $loc = $this->format_location($id);
             if ($loc) {
                 $out .= "<p class='rc-loc'><strong>Locatie:</strong><br>$loc</p>";
             }
 
-            $out .= $this->render_expertise_statuses($selected_event);
-            $out .= "<div>" . wpautop(wp_kses_post($post->post_content)) . "</div>";
+            $out .= $this->render_expertise_statuses($id);
+
+            $out .= "<div>" . wpautop(wp_kses_post(get_the_content())) . "</div>";
 
             $signups = $wpdb->get_results($wpdb->prepare(
                 "SELECT u.ID, u.display_name
@@ -910,13 +855,13 @@ private function send_unsubscribe_emails($event_id, $user_id) {
                  LEFT JOIN {$wpdb->users} u ON s.user_id = u.ID
                  WHERE s.event_id = %d
                  ORDER BY s.created_at ASC",
-                $selected_event
+                $id
             ));
 
             if ($signups) {
                 $out .= "<div class='rc-signups'><strong>Aangemeld:</strong><ul>";
 
-                foreach ($signups as $s) {
+                         foreach ($signups as $s) {
                     $expertise = $wpdb->get_var($wpdb->prepare(
                         "SELECT e.name
                          FROM {$this->table_name()} s2
@@ -924,7 +869,7 @@ private function send_unsubscribe_emails($event_id, $user_id) {
                          WHERE s2.user_id = %d AND s2.event_id = %d
                          LIMIT 1",
                         $s->ID,
-                        $selected_event
+                        $id
                     ));
 
                     $name = $s->display_name;
@@ -938,87 +883,13 @@ private function send_unsubscribe_emails($event_id, $user_id) {
                 $out .= "</ul></div>";
             }
 
-            $out .= "<div class='rc-actions'>" . $this->render_buttons($selected_event) . "</div>";
+            $out .= "<div class='rc-actions'>" . $this->render_buttons($id) . "</div>";
             $out .= "</div>";
-
-            return $out;
         }
 
-        $current_month_ts = strtotime(sprintf('%04d-%02d-01', $year, $month));
-        $prev_month       = date('Y-m', strtotime('-1 month', $current_month_ts));
-        $next_month       = date('Y-m', strtotime('+1 month', $current_month_ts));
-
-        $days_in_month    = (int) date('t', $current_month_ts);
-        $first_day_number = (int) date('N', $current_month_ts);
-
-        $events_by_day = $this->get_calendar_events($year, $month);
-
-        $month_title = date_i18n('F Y', $current_month_ts);
-        $today       = current_time('Y-m-d');
-
-        $out .= '<div class="rc-calendar-wrap">';
-
-        $out .= '<div class="rc-calendar-nav">';
-        $out .= '<a class="rc-calendar-nav-btn" href="' . esc_url(add_query_arg('rc_month', $prev_month, home_url('/repair-cafe-dagen/'))) . '">← Vorige maand</a>';
-        $out .= '<div class="rc-calendar-title">' . esc_html(ucfirst($month_title)) . '</div>';
-        $out .= '<a class="rc-calendar-nav-btn" href="' . esc_url(add_query_arg('rc_month', $next_month, home_url('/repair-cafe-dagen/'))) . '">Volgende maand →</a>';
-        $out .= '</div>';
-
-        $out .= '<div class="rc-calendar-grid rc-calendar-head">';
-        $weekdays = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'];
-
-        foreach ($weekdays as $weekday) {
-            $out .= '<div class="rc-calendar-weekday">' . esc_html($weekday) . '</div>';
-        }
-
-        $out .= '</div>';
-
-        $out .= '<div class="rc-calendar-grid rc-calendar-body">';
-
-        for ($blank = 1; $blank < $first_day_number; $blank++) {
-            $out .= '<div class="rc-calendar-day rc-calendar-day-empty"></div>';
-        }
-
-        for ($day = 1; $day <= $days_in_month; $day++) {
-            $date_string = sprintf('%04d-%02d-%02d', $year, $month, $day);
-
-            $classes = 'rc-calendar-day';
-            if ($date_string === $today) {
-                $classes .= ' rc-calendar-day-today';
-            }
-
-            $out .= '<div class="' . esc_attr($classes) . '">';
-            $out .= '<div class="rc-calendar-day-number">' . esc_html($day) . '</div>';
-
-            if (isset($events_by_day[$day])) {
-                $event = $events_by_day[$day];
-                $link  = add_query_arg([
-                    'rc_month' => $selected_month,
-                    'rc_event' => $event['id'],
-                ], home_url('/repair-cafe-dagen/'));
-
-                $out .= '<a href="' . esc_url($link) . '" class="rc-calendar-event-label">Repair Café</a>';
-            }
-
-            $out .= '</div>';
-        }
-
-        $cells_used = ($first_day_number - 1) + $days_in_month;
-        $remaining  = $cells_used % 7;
-
-        if ($remaining !== 0) {
-            $extra = 7 - $remaining;
-            for ($i = 0; $i < $extra; $i++) {
-                $out .= '<div class="rc-calendar-day rc-calendar-day-empty"></div>';
-            }
-        }
-
-        $out .= '</div>';
-        $out .= '</div>';
-
+        wp_reset_postdata();
         return $out;
     }
-    
 
     public function shortcode_my_signups() {
        if (!is_user_logged_in()) {
@@ -1439,51 +1310,16 @@ private function send_unsubscribe_emails($event_id, $user_id) {
             .rc-expertise-name{font-weight:600;color:#222;}
             .rc-expertise-meta{color:#666;font-size:14px;text-align:right;}
             .rc-actions{margin-top:12px;}
-            .rc-btn{display:inline-block;padding:9px 14px;border-radius:8px;text-decoration:none;border:1px solid #f46e16;background:#f46e16;color:#fff;font-weight:600;}
+            .rc-btn{display:inline-block;padding:9px 14px;border-radius:8px;text-decoration:none;border:1px solid #2c7be5;background:#2c7be5;color:#fff;font-weight:600;}
             .rc-btn:hover{filter:brightness(0.95);}
-            .rc-btn-secondary{background:#fff;color:#793c8f;border:1px solid #793c8f;}
+            .rc-btn-secondary{background:#fff;color:#2c7be5;}
             .rc-note{display:inline-block;padding:10px;border:1px solid #ddd;border-radius:10px;background:#fff;color:#333;}
-
-.rc-calendar-wrap{margin:20px 0;}
-.rc-calendar-nav{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
-.rc-calendar-title{font-size:24px;font-weight:700;color:#793c8f;}
-.rc-calendar-nav-btn{display:inline-block;padding:10px 14px;border:1px solid #793c8f;border-radius:10px;text-decoration:none;color:#793c8f;background:#fff;font-weight:600;}
-.rc-calendar-nav-btn:hover{background:#f8f1fb;}
-.rc-calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;}
-.rc-calendar-head{margin-bottom:10px;}
-.rc-calendar-weekday{padding:10px 8px;text-align:center;font-weight:700;color:#793c8f;background:#f8f1fb;border-radius:10px;}
-.rc-calendar-body{grid-auto-rows:minmax(110px,auto);}
-.rc-calendar-day{border:1px solid #e5e5e5;border-radius:12px;background:#fafafa;padding:10px;position:relative;}
-.rc-calendar-day-empty{background:#fff;border:1px dashed #eee;}
-.rc-calendar-day-number{font-weight:700;color:#222;margin-bottom:10px;}
-.rc-calendar-day-today{border:2px solid #793c8f;background:#fff;}
-.rc-calendar-event-label{display:inline-block;padding:8px 10px;border-radius:8px;background:#f46e16;color:#fff !important;font-weight:700;font-size:14px;line-height:1.2;text-decoration:none !important;}
-.rc-calendar-event-label:hover{color:#fff !important;text-decoration:none !important;filter:brightness(0.96);}
-.rc-calendar-event-label:visited{color:#fff !important;}
-
-@media (max-width: 640px){
-    .rc-calendar-grid{grid-template-columns:repeat(2,1fr);}
-    .rc-calendar-head{display:none;}
-    .rc-calendar-body{grid-auto-rows:minmax(90px,auto);}
-    .rc-calendar-title{font-size:20px;}
-    .rc-calendar-nav{align-items:stretch;}
-    .rc-calendar-nav-btn{width:100%;text-align:center;}
-    .rc-expertise-item{display:block;}
-    .rc-expertise-meta{display:block;text-align:left;margin-top:4px;}
-}
+            @media (max-width: 640px){
                 .rc-expertise-item{display:block;}
                 .rc-expertise-meta{display:block;text-align:left;margin-top:4px;}
             }
         ");
     }
 }
-
-add_filter('the_content', function($content) {
-    if (is_singular('rc_event')) {
-        $button = '<p><a href="/repair-cafe-dagen/" class="rc-btn rc-btn-secondary">← Terug naar kalender</a></p>';
-        return $button . $content;
-    }
-    return $content;
-});
 
 new RepairCafePlanner();

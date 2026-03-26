@@ -829,7 +829,102 @@ private function send_unsubscribe_emails($event_id, $user_id) {
     return $events_by_day;
 }
 
- 
+     public function shortcode_calendar() {
+        $selected_month = isset($_GET['rc_month']) ? sanitize_text_field($_GET['rc_month']) : date('Y-m');
+
+        if (!preg_match('/^\d{4}-\d{2}$/', $selected_month)) {
+            $selected_month = date('Y-m');
+        }
+
+        $year  = (int) substr($selected_month, 0, 4);
+        $month = (int) substr($selected_month, 5, 2);
+
+        if ($year < 2000 || $year > 2100 || $month < 1 || $month > 12) {
+            $year  = (int) date('Y');
+            $month = (int) date('m');
+            $selected_month = date('Y-m');
+        }
+
+        $current_month_ts = strtotime(sprintf('%04d-%02d-01', $year, $month));
+        $prev_month       = date('Y-m', strtotime('-1 month', $current_month_ts));
+        $next_month       = date('Y-m', strtotime('+1 month', $current_month_ts));
+
+        $days_in_month    = (int) date('t', $current_month_ts);
+        $first_day_number = (int) date('N', $current_month_ts);
+
+        $events_by_day = $this->get_calendar_events($year, $month);
+
+        $month_title = date_i18n('F Y', $current_month_ts);
+        $today       = current_time('Y-m-d');
+
+        $out = '';
+
+        if (!empty($_GET['rc_msg'])) {
+            $out .= '<div class="rc-msg">' . esc_html(rawurldecode($_GET['rc_msg'])) . '</div>';
+        }
+
+        $out .= '<div class="rc-calendar-wrap">';
+
+        $out .= '<div class="rc-calendar-nav">';
+        $out .= '<a class="rc-calendar-nav-btn" href="' . esc_url(add_query_arg('rc_month', $prev_month)) . '">← Vorige maand</a>';
+        $out .= '<div class="rc-calendar-title">' . esc_html(ucfirst($month_title)) . '</div>';
+        $out .= '<a class="rc-calendar-nav-btn" href="' . esc_url(add_query_arg('rc_month', $next_month)) . '">Volgende maand →</a>';
+        $out .= '</div>';
+
+        $out .= '<div class="rc-calendar-grid rc-calendar-head">';
+        $weekdays = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'];
+
+        foreach ($weekdays as $weekday) {
+            $out .= '<div class="rc-calendar-weekday">' . esc_html($weekday) . '</div>';
+        }
+
+        $out .= '</div>';
+
+        $out .= '<div class="rc-calendar-grid rc-calendar-body">';
+
+        for ($blank = 1; $blank < $first_day_number; $blank++) {
+            $out .= '<div class="rc-calendar-day rc-calendar-day-empty"></div>';
+        }
+
+        for ($day = 1; $day <= $days_in_month; $day++) {
+            $date_string = sprintf('%04d-%02d-%02d', $year, $month, $day);
+
+            $classes = 'rc-calendar-day';
+            if ($date_string === $today) {
+                $classes .= ' rc-calendar-day-today';
+            }
+
+            $out .= '<div class="' . esc_attr($classes) . '">';
+            $out .= '<div class="rc-calendar-day-number">' . esc_html($day) . '</div>';
+
+            if (isset($events_by_day[$day])) {
+                $event = $events_by_day[$day];
+                $link  = add_query_arg([
+                    'rc_month' => $selected_month,
+                    'rc_event' => $event['id'],
+                ], home_url('/repair-cafe-dagen/'));
+
+                $out .= '<a href="' . esc_url($link) . '" class="rc-calendar-event-label">Repair Café</a>';
+            }
+
+            $out .= '</div>';
+        }
+
+        $cells_used = ($first_day_number - 1) + $days_in_month;
+        $remaining  = $cells_used % 7;
+
+        if ($remaining !== 0) {
+            $extra = 7 - $remaining;
+            for ($i = 0; $i < $extra; $i++) {
+                $out .= '<div class="rc-calendar-day rc-calendar-day-empty"></div>';
+            }
+        }
+
+        $out .= '</div>';
+        $out .= '</div>';
+
+        return $out;
+    }
     
 
     public function shortcode_my_signups() {

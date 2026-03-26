@@ -898,7 +898,10 @@ public function shortcode_calendar() {
         $out .= '<div class="rc-calendar-day-number">' . esc_html($day) . '</div>';
 
         if (isset($events_by_day[$day])) {
-            $out .= '<div class="rc-calendar-event-label">Repair Café</div>';
+           $event = $events_by_day[$day];
+$link  = get_permalink($event['id']);
+
+$out .= '<a href="' . esc_url($link) . '" class="rc-calendar-event-label">Repair Café</a>';
         }
 
         $out .= '</div>';

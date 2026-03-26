@@ -830,7 +830,10 @@ private function send_unsubscribe_emails($event_id, $user_id) {
 }
 
 public function shortcode_calendar() {
+    global $wpdb;
+
     $selected_month = isset($_GET['rc_month']) ? sanitize_text_field($_GET['rc_month']) : date('Y-m');
+    $selected_event = isset($_GET['rc_event']) ? absint($_GET['rc_event']) : 0;
 
     if (!preg_match('/^\d{4}-\d{2}$/', $selected_month)) {
         $selected_month = date('Y-m');
@@ -842,19 +845,8 @@ public function shortcode_calendar() {
     if ($year < 2000 || $year > 2100 || $month < 1 || $month > 12) {
         $year  = (int) date('Y');
         $month = (int) date('m');
+        $selected_month = sprintf('%04d-%02d', $year, $month);
     }
-
-    $current_month_ts = strtotime(sprintf('%04d-%02d-01', $year, $month));
-    $prev_month       = date('Y-m', strtotime('-1 month', $current_month_ts));
-    $next_month       = date('Y-m', strtotime('+1 month', $current_month_ts));
-
-    $days_in_month    = (int) date('t', $current_month_ts);
-    $first_day_number = (int) date('N', $current_month_ts); // 1 = ma, 7 = zo
-
-    $events_by_day = $this->get_calendar_events($year, $month);
-
-    $month_title = date_i18n('F Y', $current_month_ts);
-    $today       = current_time('Y-m-d');
 
     $out = '';
 
@@ -862,12 +854,109 @@ public function shortcode_calendar() {
         $out .= '<div class="rc-msg">' . esc_html(rawurldecode($_GET['rc_msg'])) . '</div>';
     }
 
+    if ($selected_event > 0) {
+        $post = get_post($selected_event);
+
+        if (!$post || $post->post_type !== 'rc_event') {
+            return $out . '<p>Dit evenement bestaat niet.</p>';
+        }
+
+        $date  = get_post_meta($selected_event, '_rc_event_date', true);
+        $time  = get_post_meta($selected_event, '_rc_event_time', true);
+        $count = $this->signup_count($selected_event);
+        $max   = $this->get_max_volunteers($selected_event);
+        $loc   = $this->format_location($selected_event);
+
+        $back_url = add_query_arg('rc_month', $selected_month, home_url('/repair-cafe-dagen/'));
+
+        $out .= "<p><a href='" . esc_url($back_url) . "' class='rc-btn rc-btn-secondary'>← Terug naar kalender</a></p>";
+        $out .= "<div class='rc-card'>";
+        $out .= "<h3>" . esc_html(get_the_title($selected_event)) . "</h3>";
+
+        if ($date) {
+            $ts     = strtotime($date);
+            $pretty = date_i18n('l d-m-Y', $ts);
+
+            $out .= "<p class='rc-meta'>" . esc_html($pretty);
+            if ($time) {
+                $out .= " <small>om</small> " . esc_html($time);
+            }
+
+            if ($max !== null) {
+                $out .= " <small>·</small> <small>" . esc_html($count) . "/" . esc_html($max) . " plekken</small>";
+            } else {
+                $out .= " <small>·</small> <small>" . esc_html($count) . " aanmeldingen</small>";
+            }
+
+            $out .= "</p>";
+        }
+
+        if ($loc) {
+            $out .= "<p class='rc-loc'><strong>Locatie:</strong><br>$loc</p>";
+        }
+
+        $out .= $this->render_expertise_statuses($selected_event);
+
+        $out .= "<div>" . wpautop(wp_kses_post($post->post_content)) . "</div>";
+
+        $signups = $wpdb->get_results($wpdb->prepare(
+            "SELECT u.ID, u.display_name
+             FROM {$this->table_name()} s
+             LEFT JOIN {$wpdb->users} u ON s.user_id = u.ID
+             WHERE s.event_id = %d
+             ORDER BY s.created_at ASC",
+            $selected_event
+        ));
+
+        if ($signups) {
+            $out .= "<div class='rc-signups'><strong>Aangemeld:</strong><ul>";
+
+            foreach ($signups as $s) {
+                $expertise = $wpdb->get_var($wpdb->prepare(
+                    "SELECT e.name
+                     FROM {$this->table_name()} s2
+                     LEFT JOIN {$wpdb->prefix}rcp_expertises e ON s2.expertise_id = e.id
+                     WHERE s2.user_id = %d AND s2.event_id = %d
+                     LIMIT 1",
+                    $s->ID,
+                    $selected_event
+                ));
+
+                $name = $s->display_name;
+                if ($expertise) {
+                    $name .= ' (' . $expertise . ')';
+                }
+
+                $out .= "<li>" . esc_html($name) . "</li>";
+            }
+
+            $out .= "</ul></div>";
+        }
+
+        $out .= "<div class='rc-actions'>" . $this->render_buttons($selected_event) . "</div>";
+        $out .= "</div>";
+
+        return $out;
+    }
+
+    $current_month_ts = strtotime(sprintf('%04d-%02d-01', $year, $month));
+    $prev_month       = date('Y-m', strtotime('-1 month', $current_month_ts));
+    $next_month       = date('Y-m', strtotime('+1 month', $current_month_ts));
+
+    $days_in_month    = (int) date('t', $current_month_ts);
+    $first_day_number = (int) date('N', $current_month_ts);
+
+    $events_by_day = $this->get_calendar_events($year, $month);
+
+    $month_title = date_i18n('F Y', $current_month_ts);
+    $today       = current_time('Y-m-d');
+
     $out .= '<div class="rc-calendar-wrap">';
 
     $out .= '<div class="rc-calendar-nav">';
-    $out .= '<a class="rc-calendar-nav-btn" href="' . esc_url(add_query_arg('rc_month', $prev_month)) . '">← Vorige maand</a>';
+    $out .= '<a class="rc-calendar-nav-btn" href="' . esc_url(add_query_arg('rc_month', $prev_month, home_url('/repair-cafe-dagen/'))) . '">← Vorige maand</a>';
     $out .= '<div class="rc-calendar-title">' . esc_html(ucfirst($month_title)) . '</div>';
-    $out .= '<a class="rc-calendar-nav-btn" href="' . esc_url(add_query_arg('rc_month', $next_month)) . '">Volgende maand →</a>';
+    $out .= '<a class="rc-calendar-nav-btn" href="' . esc_url(add_query_arg('rc_month', $next_month, home_url('/repair-cafe-dagen/'))) . '">Volgende maand →</a>';
     $out .= '</div>';
 
     $out .= '<div class="rc-calendar-grid rc-calendar-head">';
@@ -897,10 +986,13 @@ public function shortcode_calendar() {
         $out .= '<div class="rc-calendar-day-number">' . esc_html($day) . '</div>';
 
         if (isset($events_by_day[$day])) {
-           $event = $events_by_day[$day];
-$link  = add_query_arg('rc_event', $event['id']);
+            $event = $events_by_day[$day];
+            $link  = add_query_arg([
+                'rc_month' => $selected_month,
+                'rc_event' => $event['id'],
+            ], home_url('/repair-cafe-dagen/'));
 
-$out .= '<a href="' . esc_url($link) . '" class="rc-calendar-event-label">Repair Cafe</a>';
+            $out .= '<a href="' . esc_url($link) . '" class="rc-calendar-event-label">Repair Café</a>';
         }
 
         $out .= '</div>';
@@ -1382,12 +1474,6 @@ $out .= '<a href="' . esc_url($link) . '" class="rc-calendar-event-label">Repair
     }
 }
 
-add_filter('the_content', function($content) {
-    if (is_singular('rc_event')) {
-        $button = '<p><a href="/repair-cafe-dagen/" class="rc-btn rc-btn-secondary">← Terug naar kalender</a></p>';
-        return $button . $content;
-    }
-    return $content;
-});
+
 
 new RepairCafePlanner();

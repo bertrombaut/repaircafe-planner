@@ -28,7 +28,6 @@ class RepairCafePlanner {
 
         add_action('admin_menu', [$this, 'admin_menu']);
         add_action('admin_init', [$this, 'register_settings']);
-        add_shortcode('repaircafe_events', [$this, 'shortcode_events']);
         add_shortcode('rc_calendar', [$this, 'shortcode_calendar']);
         add_shortcode('rc_my_signups', [$this, 'shortcode_my_signups']);
         add_shortcode('rc_login_form', [$this, 'shortcode_login_form']);
@@ -923,112 +922,7 @@ $out .= '<a href="' . esc_url($link) . '" class="rc-calendar-event-label">Repair
     return $out;
 }
     
-    public function shortcode_events() {
-        global $wpdb;
-        $today = date('Y-m-d');
-
-        $out = '';
-        if (!empty($_GET['rc_msg'])) {
-            $out .= '<div class="rc-msg">' . esc_html(rawurldecode($_GET['rc_msg'])) . '</div>';
-        }
-
-        $q = new WP_Query([
-            'post_type'      => 'rc_event',
-            'posts_per_page' => 50,
-            'meta_key'       => '_rc_event_date',
-            'orderby'        => 'meta_value',
-            'order'          => 'ASC',
-            'meta_query'     => [[
-                'key'     => '_rc_event_date',
-                'value'   => $today,
-                'compare' => '>=',
-                'type'    => 'DATE',
-            ]],
-        ]);
-
-        if (!$q->have_posts()) {
-            return $out . '<p>Geen toekomstige evenementen gevonden.</p>';
-        }
-
-        while ($q->have_posts()) {
-            $q->the_post();
-            $id = get_the_ID();
-
-            $date  = get_post_meta($id, '_rc_event_date', true);
-            $time  = get_post_meta($id, '_rc_event_time', true);
-            $count = $this->signup_count($id);
-            $max   = $this->get_max_volunteers($id);
-            $out .= "<div class='rc-card'>";
-            $out .= "<h3>" . esc_html(get_the_title()) . "</h3>";
-
-            if ($date) {
-                $ts     = strtotime($date);
-                $pretty = date_i18n('l d-m-Y', $ts);
-
-                $out .= "<p class='rc-meta'>" . esc_html($pretty);
-                if ($time) {
-                    $out .= " <small>om</small> " . esc_html($time);
-                }
-
-                if ($max !== null) {
-                    $out .= " <small>·</small> <small>" . esc_html($count) . "/" . esc_html($max) . " plekken</small>";
-                } else {
-                    $out .= " <small>·</small> <small>" . esc_html($count) . " aanmeldingen</small>";
-                }
-
-                $out .= "</p>";
-            }
-
-            $loc = $this->format_location($id);
-            if ($loc) {
-                $out .= "<p class='rc-loc'><strong>Locatie:</strong><br>$loc</p>";
-            }
-
-            $out .= $this->render_expertise_statuses($id);
-
-            $out .= "<div>" . wpautop(wp_kses_post(get_the_content())) . "</div>";
-
-            $signups = $wpdb->get_results($wpdb->prepare(
-                "SELECT u.ID, u.display_name
-                 FROM {$this->table_name()} s
-                 LEFT JOIN {$wpdb->users} u ON s.user_id = u.ID
-                 WHERE s.event_id = %d
-                 ORDER BY s.created_at ASC",
-                $id
-            ));
-
-            if ($signups) {
-                $out .= "<div class='rc-signups'><strong>Aangemeld:</strong><ul>";
-
-                         foreach ($signups as $s) {
-                    $expertise = $wpdb->get_var($wpdb->prepare(
-                        "SELECT e.name
-                         FROM {$this->table_name()} s2
-                         LEFT JOIN {$wpdb->prefix}rcp_expertises e ON s2.expertise_id = e.id
-                         WHERE s2.user_id = %d AND s2.event_id = %d
-                         LIMIT 1",
-                        $s->ID,
-                        $id
-                    ));
-
-                    $name = $s->display_name;
-                    if ($expertise) {
-                        $name .= ' (' . $expertise . ')';
-                    }
-
-                    $out .= "<li>" . esc_html($name) . "</li>";
-                }
-
-                $out .= "</ul></div>";
-            }
-
-            $out .= "<div class='rc-actions'>" . $this->render_buttons($id) . "</div>";
-            $out .= "</div>";
-        }
-
-        wp_reset_postdata();
-        return $out;
-    }
+    
 
     public function shortcode_my_signups() {
        if (!is_user_logged_in()) {

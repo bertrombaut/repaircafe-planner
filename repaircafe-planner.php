@@ -1310,9 +1310,9 @@ private function send_unsubscribe_emails($event_id, $user_id) {
             .rc-expertise-name{font-weight:600;color:#222;}
             .rc-expertise-meta{color:#666;font-size:14px;text-align:right;}
             .rc-actions{margin-top:12px;}
-            .rc-btn{display:inline-block;padding:9px 14px;border-radius:8px;text-decoration:none;border:1px solid #2c7be5;background:#2c7be5;color:#fff;font-weight:600;}
+            .rc-btn{display:inline-block;padding:9px 14px;border-radius:8px;text-decoration:none;border:1px solid #f46e16;background:#f46e16;color:#fff;font-weight:600;}
             .rc-btn:hover{filter:brightness(0.95);}
-            .rc-btn-secondary{background:#fff;color:#2c7be5;}
+            .rc-btn-secondary{background:#fff;color:#793c8f;border:1px solid #793c8f;}
             .rc-note{display:inline-block;padding:10px;border:1px solid #ddd;border-radius:10px;background:#fff;color:#333;}
             @media (max-width: 640px){
                 .rc-expertise-item{display:block;}

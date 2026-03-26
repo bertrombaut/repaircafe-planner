@@ -833,8 +833,38 @@ public function shortcode_calendar() {
     global $wpdb;
 
     $selected_month = isset($_GET['rc_month']) ? sanitize_text_field($_GET['rc_month']) : date('Y-m');
-    $selected_event = isset($_GET['rc_event']) ? absint($_GET['rc_event']) : 0;
+   if ($selected_event > 0) {
 
+    $post = get_post($selected_event);
+
+    if (!$post || $post->post_type !== 'rc_event') {
+        return '<p>Dit evenement bestaat niet.</p>';
+    }
+
+    $date  = get_post_meta($selected_event, '_rc_event_date', true);
+    $time  = get_post_meta($selected_event, '_rc_event_time', true);
+
+    $back_url = add_query_arg('rc_month', $selected_month, home_url('/repair-cafe-dagen/'));
+
+    $out  = "<p><a href='" . esc_url($back_url) . "' class='rc-btn rc-btn-secondary'>← Terug naar kalender</a></p>";
+    $out .= "<div class='rc-card'>";
+    $out .= "<h3>" . esc_html(get_the_title($selected_event)) . "</h3>";
+
+    if ($date) {
+        $ts = strtotime($date);
+        $out .= "<p class='rc-meta'>" . date_i18n('l d-m-Y', $ts);
+        if ($time) {
+            $out .= " om " . esc_html($time);
+        }
+        $out .= "</p>";
+    }
+
+    $out .= "<div>" . wpautop(wp_kses_post($post->post_content)) . "</div>";
+    $out .= "<div class='rc-actions'>" . $this->render_buttons($selected_event) . "</div>";
+    $out .= "</div>";
+
+    return $out;
+}
     if (!preg_match('/^\d{4}-\d{2}$/', $selected_month)) {
         $selected_month = date('Y-m');
     }

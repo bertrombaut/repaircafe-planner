@@ -1488,4 +1488,12 @@ $out .= '<a href="' . esc_url($link) . '" class="rc-calendar-event-label">Repair
     }
 }
 
+add_filter('the_content', function($content) {
+    if (is_singular('rc_event')) {
+        $button = '<p><a href="/repair-cafe-dagen/" class="rc-btn rc-btn-secondary">← Terug naar kalender</a></p>';
+        return $button . $content;
+    }
+    return $content;
+});
+
 new RepairCafePlanner();

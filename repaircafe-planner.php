@@ -1468,7 +1468,9 @@ $out .= '<a href="' . esc_url($link) . '" class="rc-calendar-event-label">Repair
 .rc-calendar-day-empty{background:#fff;border:1px dashed #eee;}
 .rc-calendar-day-number{font-weight:700;color:#222;margin-bottom:10px;}
 .rc-calendar-day-today{border:2px solid #793c8f;background:#fff;}
-.rc-calendar-event-label{display:inline-block;padding:8px 10px;border-radius:8px;background:#f46e16;color:#fff;font-weight:700;font-size:14px;line-height:1.2;}
+.rc-calendar-event-label{display:inline-block;padding:8px 10px;border-radius:8px;background:#f46e16;color:#fff !important;font-weight:700;font-size:14px;line-height:1.2;text-decoration:none !important;}
+.rc-calendar-event-label:hover{color:#fff !important;text-decoration:none !important;filter:brightness(0.96);}
+.rc-calendar-event-label:visited{color:#fff !important;}
 
 @media (max-width: 640px){
     .rc-calendar-grid{grid-template-columns:repeat(2,1fr);}

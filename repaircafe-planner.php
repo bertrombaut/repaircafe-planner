@@ -900,7 +900,7 @@ public function shortcode_calendar() {
            $event = $events_by_day[$day];
 $link  = add_query_arg('rc_event', $event['id']);
 
-$out .= '<a href="' . esc_url($link) . '" class="rc-calendar-event-label">Bekijk</a>';
+$out .= '<a href="' . esc_url($link) . '" class="rc-calendar-event-label">Repair Cafe</a>';
         }
 
         $out .= '</div>';

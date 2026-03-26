@@ -959,6 +959,7 @@ $out .= '<a href="' . esc_url($link) . '" class="rc-calendar-event-label">Repair
             $count = $this->signup_count($id);
             $max   = $this->get_max_volunteers($id);
 
+            $out .= '<p><a href="' . esc_url(home_url('/repair-cafe-dagen/')) . '" class="rc-btn rc-btn-secondary">← Terug naar kalender</a></p>';
             $out .= "<div class='rc-card'>";
             $out .= "<h3>" . esc_html(get_the_title()) . "</h3>";
 

@@ -25,7 +25,6 @@ class RepairCafePlanner {
         add_action('add_meta_boxes', [$this, 'add_metaboxes']);
         add_action('save_post', [$this, 'save_event_meta']);
         add_action('init', [$this, 'handle_actions']);
-        add_filter('the_content', [$this, 'add_back_button_to_event']);
 
         add_action('admin_menu', [$this, 'admin_menu']);
         add_action('admin_init', [$this, 'register_settings']);
@@ -1489,16 +1488,6 @@ $out .= '<a href="' . esc_url($link) . '" class="rc-calendar-event-label">Repair
             }
         ");
     }
-}
-
-public function add_back_button_to_event($content) {
-    if (!is_singular('rc_event')) {
-        return $content;
-    }
-
-    $button = '<p><a href="/repair-cafe-dagen/" class="rc-btn rc-btn-secondary">← Terug naar kalender</a></p>';
-
-    return $button . $content;
 }
 
 new RepairCafePlanner();

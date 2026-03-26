@@ -1311,6 +1311,7 @@ private function send_unsubscribe_emails($event_id, $user_id) {
             .rc-expertise-meta{color:#666;font-size:14px;text-align:right;}
             .rc-actions{margin-top:12px;}
 .rc-btn{display:inline-block;padding:9px 14px;border-radius:8px;text-decoration:none;border:1px solid #f46e16;background:#f46e16;color:#fff;font-weight:600;}
+.rc-btn:visited,.rc-btn:hover,.rc-btn:active,.rc-btn:focus{color:#fff;}
              .rc-btn:hover{filter:brightness(0.95);}
             .rc-btn-secondary{background:#fff;color:#f46e16;border:1px solid #f46e16;}
             .rc-note{display:inline-block;padding:10px;border:1px solid #ddd;border-radius:10px;background:#fff;color:#333;}

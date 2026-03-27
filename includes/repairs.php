@@ -265,4 +265,3 @@ function repaircafe_render_calendar() {
     return $out;
 }
     
-}

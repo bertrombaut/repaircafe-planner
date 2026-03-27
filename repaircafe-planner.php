@@ -851,6 +851,9 @@ private function send_unsubscribe_emails($event_id, $user_id) {
             $out .= $this->render_expertise_statuses($id);
 
             $out .= "<div>" . wpautop(wp_kses_post(get_the_content())) . "</div>";
+            $out .= "<p style='margin-top:20px;'>
+<a href='" . esc_url(home_url('/repair-cafe-dagen/')) . "' class='rc-btn'>← Terug naar kalender</a>
+</p>";
 
             $signups = $wpdb->get_results($wpdb->prepare(
                 "SELECT u.ID, u.display_name

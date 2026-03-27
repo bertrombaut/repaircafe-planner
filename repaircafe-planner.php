@@ -969,12 +969,12 @@ private function send_unsubscribe_emails($event_id, $user_id) {
         $out .= "<p>Je hebt geen toekomstige aanmeldingen.</p>";
     }
 
-    $out .= "<h2 style='margin-top:30px;'>Alle events waarvoor ik ooit ben aangemeld</h2>";
-    if ($future || $past) {
-        $out .= implode('', array_merge($future, $past));
-    } else {
-        $out .= "<p>Je hebt nog geen aanmeldingen.</p>";
-    }
+   $out .= "<h2 style='margin-top:30px;'>Alle events waar ik ooit ben aangemeld</h2>";
+if ($past) {
+    $out .= implode('', $past);
+} else {
+    $out .= "<p>Je hebt nog geen eerdere aanmeldingen.</p>";
+}
 
     $out .= "</div>";
 

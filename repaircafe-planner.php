@@ -1304,11 +1304,40 @@ public function add_back_button_to_event($content) {
         return $content;
     }
 
+    $event_id = get_the_ID();
+
+    $date = get_post_meta($event_id, '_rc_event_date', true);
+    $time = get_post_meta($event_id, '_rc_event_time', true);
+    $loc  = get_post_meta($event_id, '_rc_location_name', true);
+    $addr = get_post_meta($event_id, '_rc_location_address', true);
+    $city = get_post_meta($event_id, '_rc_location_city', true);
+
+    $info = "<div style='margin-top:10px;'>";
+
+    if ($date) {
+        $pretty = date_i18n('l d-m-Y', strtotime($date));
+        $info .= "<p><strong>Datum:</strong> $pretty";
+        if ($time) {
+            $info .= " om $time";
+        }
+        $info .= "</p>";
+    }
+
+    if ($loc || $addr || $city) {
+        $info .= "<p><strong>Locatie:</strong><br>";
+        if ($loc)  $info .= $loc . "<br>";
+        if ($addr) $info .= $addr . "<br>";
+        if ($city) $info .= $city;
+        $info .= "</p>";
+    }
+
+    $info .= "</div>";
+
     $button = "<p style='margin-top:20px;'>
     <a href='" . esc_url(home_url('/repair-cafe-dagen/')) . "' class='rc-btn'>← Terug naar kalender</a>
     </p>";
 
-    return $content . $button;
+    return $content . $info . $button;
 }
     
     /* -------------------- Styles -------------------- */

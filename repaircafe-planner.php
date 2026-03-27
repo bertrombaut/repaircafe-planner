@@ -37,6 +37,7 @@ class RepairCafePlanner {
 });
 
         add_action('wp_enqueue_scripts', [$this, 'enqueue_styles']);
+        add_filter('the_content', [$this, 'add_back_button_to_event']);
         add_filter('wp_nav_menu_objects', [$this, 'filter_menu_items'], 10, 2);
         add_action('admin_init', [$this, 'block_volunteer_backend']);
         add_filter('show_admin_bar', [$this, 'hide_admin_bar_for_volunteers']);

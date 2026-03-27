@@ -2025,7 +2025,7 @@ class RepairCafePlanner {
 
         echo '</div></div>';
     }
-
+}
     /**
      * Voegt extra event-info en terugknop toe aan losse eventpagina.
      *

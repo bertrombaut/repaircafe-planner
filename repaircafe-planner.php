@@ -1331,7 +1331,17 @@ public function add_back_button_to_event($content) {
         $info .= "</p>";
     }
 
-    $info .= "</div>";
+  $rows = $this->get_event_expertise_statuses($event_id);
+
+if (!empty($rows)) {
+    $info .= "<p><strong>Benodigde vrijwilligers:</strong></p><ul>";
+    foreach ($rows as $row) {
+        $info .= "<li>" . esc_html($row->name) . ": " . esc_html($row->count) . "/" . esc_html($row->max_volunteers) . "</li>";
+    }
+    $info .= "</ul>";
+}
+
+$info .= "</div>";
 
     $button = "<p style='margin-top:20px;'>
     <a href='" . esc_url(home_url('/repair-cafe-dagen/')) . "' class='rc-btn'>← Terug naar kalender</a>

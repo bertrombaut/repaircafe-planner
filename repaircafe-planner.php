@@ -899,67 +899,87 @@ private function send_unsubscribe_emails($event_id, $user_id) {
     }
 
     public function shortcode_my_signups() {
-       if (!is_user_logged_in()) {
-    $login = home_url('/inloggen/');
-    return '<p><a class="rc-btn" href="' . esc_url($login) . '">Log in om je aanmeldingen te bekijken</a></p>';
-}
-
-        global $wpdb;
-        $table   = $this->table_name();
-        $user_id = get_current_user_id();
-
-        $rows = $wpdb->get_results($wpdb->prepare(
-            "SELECT event_id, created_at FROM $table WHERE user_id = %d ORDER BY created_at DESC",
-            $user_id
-        ));
-
-        if (!$rows) {
-            return '<p>Je hebt nog geen aanmeldingen.</p>';
-        }
-
-        $out = "<div class='rc-my'>";
-
-        foreach ($rows as $r) {
-            $event_id = (int) $r->event_id;
-
-            if (get_post_type($event_id) !== 'rc_event') continue;
-
-            $status = get_post_status($event_id);
-            if (!in_array($status, ['publish', 'future'], true)) continue;
-
-            $title = get_the_title($event_id);
-            $date  = get_post_meta($event_id, '_rc_event_date', true);
-            $time  = get_post_meta($event_id, '_rc_event_time', true);
-            $loc   = $this->format_location($event_id);
-
-            $out .= "<div class='rc-card'>";
-            $out .= "<h3>" . esc_html($title) . "</h3>";
-
-            if ($date) {
-                $ts     = strtotime($date);
-                $pretty = date_i18n('l d-m-Y', $ts);
-
-                $out .= "<p class='rc-meta'>" . esc_html($pretty);
-                if ($time) {
-                    $out .= " <small>om</small> " . esc_html($time);
-                }
-                $out .= "</p>";
-            }
-
-            if ($loc) {
-                $out .= "<p class='rc-loc'><strong>Locatie:</strong><br>$loc</p>";
-            }
-
-            $out .= $this->render_expertise_statuses($event_id);
-
-            $out .= "<div class='rc-actions'>" . $this->render_buttons($event_id, true) . "</div>";
-            $out .= "</div>";
-        }
-
-                $out .= "</div>";
-        return $out;
+    if (!is_user_logged_in()) {
+        $login = home_url('/inloggen/');
+        return '<p><a class="rc-btn" href="' . esc_url($login) . '">Log in om je aanmeldingen te bekijken</a></p>';
     }
 
+    global $wpdb;
+    $table   = $this->table_name();
+    $user_id = get_current_user_id();
+    $today   = date('Y-m-d');
+
+    $rows = $wpdb->get_results($wpdb->prepare(
+        "SELECT event_id, created_at FROM $table WHERE user_id = %d ORDER BY created_at DESC",
+        $user_id
+    ));
+
+    if (!$rows) {
+        return '<p>Je hebt nog geen aanmeldingen.</p>';
+    }
+
+    $future = [];
+    $past   = [];
+
+    foreach ($rows as $r) {
+        $event_id = (int) $r->event_id;
+
+        if (get_post_type($event_id) !== 'rc_event') continue;
+
+        $title = get_the_title($event_id);
+        $date  = get_post_meta($event_id, '_rc_event_date', true);
+        $time  = get_post_meta($event_id, '_rc_event_time', true);
+        $loc   = $this->format_location($event_id);
+
+        $item  = "<div class='rc-card'>";
+        $item .= "<h3>" . esc_html($title) . "</h3>";
+
+        if ($date) {
+            $ts     = strtotime($date);
+            $pretty = date_i18n('l d-m-Y', $ts);
+
+            $item .= "<p class='rc-meta'>" . esc_html($pretty);
+            if ($time) {
+                $item .= " <small>om</small> " . esc_html($time);
+            }
+            $item .= "</p>";
+        }
+
+        if ($loc) {
+            $item .= "<p class='rc-loc'><strong>Locatie:</strong><br>$loc</p>";
+        }
+
+        $item .= $this->render_expertise_statuses($event_id);
+        $item .= "<div class='rc-actions'>" . $this->render_buttons($event_id, true) . "</div>";
+        $item .= "</div>";
+
+        if ($date && $date >= $today) {
+            $future[] = $item;
+        } else {
+            $past[] = $item;
+        }
+    }
+
+    $out = "<div class='rc-my'>";
+
+    $out .= "<h2>Toekomstige events waar ik ben aangemeld</h2>";
+    if ($future) {
+        $out .= implode('', $future);
+    } else {
+        $out .= "<p>Je hebt geen toekomstige aanmeldingen.</p>";
+    }
+
+    $out .= "<h2 style='margin-top:30px;'>Alle events waar ik ooit ben aangemeld</h2>";
+    if ($future || $past) {
+        $out .= implode('', array_merge($future, $past));
+    } else {
+        $out .= "<p>Je hebt nog geen aanmeldingen.</p>";
+    }
+
+    $out .= "</div>";
+
+    return $out;
+}
     private function render_buttons($event_id, $compact = false) {
         if (!is_user_logged_in()) {
     $login = home_url('/inloggen/');
@@ -1032,7 +1052,7 @@ private function send_unsubscribe_emails($event_id, $user_id) {
     }
 
     public function filter_menu_items($items, $args) {
-        $allowed_logged_in = ['repair cafe dagen', 'aangemeld'];
+        $allowed_logged_in = ['repair cafe dagen', 'mijn aanmeldingen'];
 
         foreach ($items as $key => $item) {
             $title = strtolower(trim($item->title));

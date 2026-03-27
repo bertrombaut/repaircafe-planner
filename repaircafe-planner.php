@@ -1421,7 +1421,6 @@ if ($all_volunteers) {
     }
 
     echo '</ul>';
-}
                 
             }
 

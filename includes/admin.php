@@ -216,6 +216,7 @@ function repaircafe_admin_expertises_page() {
  * - alle vrijwilligers
  * - aangemeld voor gekozen event
  * - zelfde expertise en nog niet aangemeld voor gekozen event
+ * - zelfde expertise en wel aangemeld voor gekozen event
  *
  * In:
  * - $_GET['email_list_type']
@@ -239,6 +240,7 @@ function repaircafe_admin_email_lists_page() {
         'all_volunteers',
         'signed_up_event',
         'expertise_not_signed_up_event',
+        'expertise_signed_up_event',
     );
 
     if ( ! in_array($list_type, $allowed_types, true) ) {
@@ -265,6 +267,11 @@ function repaircafe_admin_email_lists_page() {
         $title = 'Zelfde expertise en nog niet aangemeld';
     }
 
+    if ( $list_type === 'expertise_signed_up_event' && $event_id > 0 && $expertise_id > 0 ) {
+        $users = rcp_get_volunteers_by_expertise_signed_up_for_event($event_id, $expertise_id);
+        $title = 'Zelfde expertise en wel aangemeld';
+    }
+
     $emails = rcp_extract_emails_from_users($users);
 
     echo '<div class="wrap">';
@@ -282,6 +289,7 @@ function repaircafe_admin_email_lists_page() {
     echo '<option value="all_volunteers"' . selected($list_type, 'all_volunteers', false) . '>Alle vrijwilligers</option>';
     echo '<option value="signed_up_event"' . selected($list_type, 'signed_up_event', false) . '>Aangemeld voor gekozen event</option>';
     echo '<option value="expertise_not_signed_up_event"' . selected($list_type, 'expertise_not_signed_up_event', false) . '>Zelfde expertise en nog niet aangemeld voor gekozen event</option>';
+    echo '<option value="expertise_signed_up_event"' . selected($list_type, 'expertise_signed_up_event', false) . '>Zelfde expertise en wel aangemeld voor gekozen event</option>';
     echo '</select>';
     echo '</td>';
     echo '</tr>';
@@ -520,6 +528,59 @@ function rcp_get_volunteers_by_expertise_not_signed_up_for_event($event_id, $exp
                 FROM {$wpdb->prefix}rc_signups s
                 WHERE s.event_id = %d
             )
+            ORDER BY ue.user_id ASC
+            ",
+            $expertise_id,
+            $event_id
+        )
+    );
+
+    if ( empty($user_ids) ) {
+        return array();
+    }
+
+    $args = array(
+        'include' => array_map('intval', $user_ids),
+        'orderby' => 'display_name',
+        'order'   => 'ASC',
+        'fields'  => array('ID', 'display_name', 'user_email'),
+    );
+
+    return get_users($args);
+}
+
+/**
+ * Haalt vrijwilligers op met een gekozen expertise die wel zijn aangemeld voor een bepaald event.
+ *
+ * Doet:
+ * - zoekt alle gebruikers met die expertise
+ * - houdt alleen gebruikers over die aangemeld zijn voor het gekozen event
+ *
+ * In:
+ * - $event_id: ID van het event
+ * - $expertise_id: ID van de expertise
+ *
+ * Uit:
+ * - array met WordPress gebruikers
+ */
+function rcp_get_volunteers_by_expertise_signed_up_for_event($event_id, $expertise_id) {
+    global $wpdb;
+
+    $event_id     = (int) $event_id;
+    $expertise_id = (int) $expertise_id;
+
+    if ( $event_id <= 0 || $expertise_id <= 0 ) {
+        return array();
+    }
+
+    $user_ids = $wpdb->get_col(
+        $wpdb->prepare(
+            "
+            SELECT DISTINCT ue.user_id
+            FROM {$wpdb->prefix}rcp_user_expertises ue
+            INNER JOIN {$wpdb->prefix}rc_signups s ON s.user_id = ue.user_id
+            WHERE ue.expertise_id = %d
+            AND s.event_id = %d
             ORDER BY ue.user_id ASC
             ",
             $expertise_id,

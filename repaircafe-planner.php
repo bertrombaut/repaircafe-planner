@@ -1298,6 +1298,19 @@ private function send_unsubscribe_emails($event_id, $user_id) {
         echo '</div></div>';
     }
 
+public function add_back_button_to_event($content) {
+
+    if (get_post_type() !== 'rc_event') {
+        return $content;
+    }
+
+    $button = "<p style='margin-top:20px;'>
+    <a href='" . esc_url(home_url('/repair-cafe-dagen/')) . "' class='rc-btn'>← Terug naar kalender</a>
+    </p>";
+
+    return $content . $button;
+}
+    
     /* -------------------- Styles -------------------- */
     public function enqueue_styles() {
         wp_register_style('repaircafe-planner-inline', false);

@@ -32,6 +32,7 @@ class RepairCafePlanner {
         add_shortcode('rc_my_signups', [$this, 'shortcode_my_signups']);
         add_shortcode('rc_login_form', [$this, 'shortcode_login_form']);
         add_shortcode('rc_lost_password_form', [$this, 'shortcode_lost_password_form']);
+        add_shortcode('repaircafe_calendar', 'repaircafe_render_calendar');
 
         add_action('wp_enqueue_scripts', [$this, 'enqueue_styles']);
         add_filter('wp_nav_menu_objects', [$this, 'filter_menu_items'], 10, 2);

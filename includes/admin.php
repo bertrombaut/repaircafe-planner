@@ -2,11 +2,38 @@
 if ( ! defined('ABSPATH') ) exit;
 
 /*
-ADMIN MENUS
+|--------------------------------------------------------------------------
+| ADMIN MENUS
+|--------------------------------------------------------------------------
+| Hier worden extra submenu's onder het Repair Café menu toegevoegd.
 */
 
+/**
+ * Koppelt het submenu voor expertises aan het WordPress adminmenu.
+ *
+ * Doet:
+ * - voegt onder Repair Cafés een submenu "Expertises" toe
+ *
+ * In:
+ * - niets
+ *
+ * Uit:
+ * - niets
+ */
 add_action('admin_menu', 'rcp_admin_menu');
 
+/**
+ * Registreert het submenu voor expertises.
+ *
+ * Doet:
+ * - maakt de beheerpagina voor expertises bereikbaar
+ *
+ * In:
+ * - niets
+ *
+ * Uit:
+ * - niets
+ */
 function rcp_admin_menu() {
 
     add_submenu_page(
@@ -20,11 +47,34 @@ function rcp_admin_menu() {
 
 }
 
-
 /*
-ADMIN PAGES
+|--------------------------------------------------------------------------
+| ADMIN PAGES
+|--------------------------------------------------------------------------
+| Beheerpagina's voor instellingen en onderhoud van expertises.
 */
 
+/**
+ * Toont de beheerpagina voor expertises.
+ *
+ * Doet:
+ * - controleert adminrechten
+ * - verwerkt toevoegen van nieuwe expertise
+ * - verwerkt verwijderen van expertise
+ * - verwijdert bij verwijderen ook koppelingen met gebruikers en events
+ * - toont formulier en overzichtstabel
+ *
+ * In:
+ * - $_POST voor toevoegen
+ * - $_GET voor verwijderen
+ *
+ * Uit:
+ * - HTML
+ *
+ * Waarom zo gebouwd:
+ * - 1 centrale pagina voor alle expertise-beheer
+ * - bij verwijderen worden gekoppelde records direct opgeruimd
+ */
 function repaircafe_admin_expertises_page() {
 
     if ( ! current_user_can('manage_options') ) {
@@ -145,14 +195,43 @@ function repaircafe_admin_expertises_page() {
     echo '</div>';
 }
 
-
 /*
-USER EXPERTISES
+|--------------------------------------------------------------------------
+| USER EXPERTISES
+|--------------------------------------------------------------------------
+| Hier worden expertises gekoppeld aan WordPress gebruikers.
 */
 
+/**
+ * Toont het expertise-veld op het gebruikersprofiel.
+ *
+ * Doet:
+ * - haalt alle beschikbare expertises op
+ * - haalt de huidige selecties van de gebruiker op
+ * - toont checkboxen per expertise
+ *
+ * In:
+ * - $user: WordPress gebruiker
+ *
+ * Uit:
+ * - HTML
+ */
 add_action('show_user_profile', 'rcp_user_expertises_field');
 add_action('edit_user_profile', 'rcp_user_expertises_field');
 
+/**
+ * Rendert de expertise-checkboxen op het gebruikersprofiel.
+ *
+ * Doet:
+ * - toont alle expertises
+ * - zet bestaande koppelingen alvast aangevinkt
+ *
+ * In:
+ * - $user: WordPress gebruiker
+ *
+ * Uit:
+ * - HTML
+ */
 function rcp_user_expertises_field($user) {
 
     global $wpdb;
@@ -190,9 +269,39 @@ function rcp_user_expertises_field($user) {
     echo '</table>';
 }
 
+/**
+ * Koppelt opslaan van gebruikersexpertises aan profiel-updates.
+ *
+ * Doet:
+ * - slaat expertises op als profiel wordt bewaard
+ *
+ * In:
+ * - niets
+ *
+ * Uit:
+ * - niets
+ */
 add_action('personal_options_update', 'rcp_save_user_expertises');
 add_action('edit_user_profile_update', 'rcp_save_user_expertises');
 
+/**
+ * Slaat de expertises van een gebruiker op.
+ *
+ * Doet:
+ * - controleert bewerkrechten
+ * - wist eerst bestaande koppelingen
+ * - zet daarna de nieuwe koppelingen terug
+ *
+ * In:
+ * - $user_id: ID van de gebruiker
+ * - $_POST['rcp_user_expertises']
+ *
+ * Uit:
+ * - niets
+ *
+ * Waarom zo gebouwd:
+ * - eerst leegmaken en daarna opnieuw opslaan houdt de koppelingen eenvoudig
+ */
 function rcp_save_user_expertises($user_id) {
 
     if ( ! current_user_can('edit_user', $user_id) ) {

@@ -962,14 +962,14 @@ private function send_unsubscribe_emails($event_id, $user_id) {
 
     $out = "<div class='rc-my'>";
 
-    $out .= "<h2>Toekomstige events waar ik ben aangemeld</h2>";
+    $out .= "<h2>Toekomstige events waarvoor ik ben aangemeld</h2>";
     if ($future) {
         $out .= implode('', $future);
     } else {
         $out .= "<p>Je hebt geen toekomstige aanmeldingen.</p>";
     }
 
-    $out .= "<h2 style='margin-top:30px;'>Alle events waar ik ooit ben aangemeld</h2>";
+    $out .= "<h2 style='margin-top:30px;'>Alle events waarvoor ik ooit ben aangemeld</h2>";
     if ($future || $past) {
         $out .= implode('', array_merge($future, $past));
     } else {

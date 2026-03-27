@@ -1331,7 +1331,7 @@ public function add_back_button_to_event($content) {
         $info .= "</p>";
     }
 
-  $rows = $this->get_event_expertise_statuses($event_id);
+  return $content . $this->render_expertise_statuses($event_id) . $button;
 
 if (!empty($rows)) {
     $info .= "<p><strong>Benodigde vrijwilligers:</strong></p><ul>";

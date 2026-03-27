@@ -1323,31 +1323,23 @@ public function add_back_button_to_event($content) {
         $info .= "</p>";
     }
 
-    if ($loc || $addr || $city) {
-        $info .= "<p><strong>Locatie:</strong><br>";
-        if ($loc)  $info .= $loc . "<br>";
-        if ($addr) $info .= $addr . "<br>";
-        if ($city) $info .= $city;
-        $info .= "</p>";
-    }
-
-  return $content . $this->render_expertise_statuses($event_id) . $button;
-
-if (!empty($rows)) {
-    $info .= "<p><strong>Benodigde vrijwilligers:</strong></p><ul>";
-    foreach ($rows as $row) {
-        $info .= "<li>" . esc_html($row->name) . ": " . esc_html($row->count) . "/" . esc_html($row->max_volunteers) . "</li>";
-    }
-    $info .= "</ul>";
+   if ($loc || $addr || $city) {
+    $info .= "<p><strong>Locatie:</strong><br>";
+    if ($loc)  $info .= $loc . "<br>";
+    if ($addr) $info .= $addr . "<br>";
+    if ($city) $info .= $city;
+    $info .= "</p>";
 }
+
+$info .= $this->render_expertise_statuses($event_id);
 
 $info .= "</div>";
 
-    $button = "<p style='margin-top:20px;'>
-    <a href='" . esc_url(home_url('/repair-cafe-dagen/')) . "' class='rc-btn'>← Terug naar kalender</a>
-    </p>";
+$button = "<p style='margin-top:20px;'>
+<a href='" . esc_url(home_url('/repair-cafe-dagen/')) . "' class='rc-btn'>← Terug naar kalender</a>
+</p>";
 
-    return $content . $info . $button;
+return $content . $info . $button;
 }
     
     /* -------------------- Styles -------------------- */

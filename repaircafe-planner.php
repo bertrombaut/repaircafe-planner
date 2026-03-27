@@ -1429,7 +1429,7 @@ if ($all_volunteers) {
 
         echo '</div></div>';
     }
-
+    }
 public function add_back_button_to_event($content) {
 
     if (get_post_type() !== 'rc_event') {

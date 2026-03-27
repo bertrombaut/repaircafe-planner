@@ -1333,6 +1333,42 @@ public function add_back_button_to_event($content) {
 
 $info .= $this->render_expertise_statuses($event_id);
 
+    global $wpdb;
+
+$signups = $wpdb->get_results($wpdb->prepare(
+    "SELECT u.ID, u.display_name
+     FROM {$this->table_name()} s
+     LEFT JOIN {$wpdb->users} u ON s.user_id = u.ID
+     WHERE s.event_id = %d
+     ORDER BY s.created_at ASC",
+    $event_id
+));
+
+if ($signups) {
+    $info .= "<div class='rc-signups'><strong>Aangemeld:</strong><ul>";
+
+    foreach ($signups as $s) {
+        $expertise = $wpdb->get_var($wpdb->prepare(
+            "SELECT e.name
+             FROM {$this->table_name()} s2
+             LEFT JOIN {$wpdb->prefix}rcp_expertises e ON s2.expertise_id = e.id
+             WHERE s2.user_id = %d AND s2.event_id = %d
+             LIMIT 1",
+            $s->ID,
+            $event_id
+        ));
+
+        $name = $s->display_name;
+        if ($expertise) {
+            $name .= ' (' . $expertise . ')';
+        }
+
+        $info .= "<li>" . esc_html($name) . "</li>";
+    }
+
+    $info .= "</ul></div>";
+}
+
 $info .= "</div>";
 
 $button = "<p style='margin-top:20px;'>

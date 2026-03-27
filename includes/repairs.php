@@ -189,4 +189,79 @@ function repaircafe_get_user_expertise_names( $user_id ) {
             $user_id
         )
     );
+
+function repaircafe_render_calendar() {
+
+    $month = isset($_GET['rc_month']) ? intval($_GET['rc_month']) : date('n');
+    $year  = isset($_GET['rc_year']) ? intval($_GET['rc_year']) : date('Y');
+
+    if ($month < 1) { $month = 12; $year--; }
+    if ($month > 12) { $month = 1; $year++; }
+
+    $first_day_ts = strtotime("$year-$month-01");
+    $days_in_month = date('t', $first_day_ts);
+    $start_weekday = date('N', $first_day_ts); // 1 = ma, 7 = zo
+
+    $events = repaircafe_get_events();
+    $events_by_day = [];
+
+    foreach ($events as $event) {
+        $date = get_post_meta($event->ID, '_rc_event_date', true);
+        if (!$date) continue;
+
+        $event_ts = strtotime($date);
+        if (date('n', $event_ts) == $month && date('Y', $event_ts) == $year) {
+            $day = intval(date('j', $event_ts));
+            $events_by_day[$day][] = $event;
+        }
+    }
+
+    $prev_month = $month - 1;
+    $prev_year  = $year;
+    if ($prev_month < 1) { $prev_month = 12; $prev_year--; }
+
+    $next_month = $month + 1;
+    $next_year  = $year;
+    if ($next_month > 12) { $next_month = 1; $next_year++; }
+
+    $out = "<div class='rc-calendar'>";
+
+    $out .= "<div style='display:flex;justify-content:space-between;margin-bottom:10px;'>";
+    $out .= "<a class='rc-btn' href='?rc_month=$prev_month&rc_year=$prev_year'>← vorige maand</a>";
+    $out .= "<strong>" . date_i18n('F Y', $first_day_ts) . "</strong>";
+    $out .= "<a class='rc-btn' href='?rc_month=$next_month&rc_year=$next_year'>volgende maand →</a>";
+    $out .= "</div>";
+
+    $out .= "<div style='display:grid;grid-template-columns:repeat(7,1fr);gap:6px;'>";
+
+    $days = ['ma','di','wo','do','vr','za','zo'];
+    foreach ($days as $d) {
+        $out .= "<div style='font-weight:600;text-align:center;'>$d</div>";
+    }
+
+    for ($i = 1; $i < $start_weekday; $i++) {
+        $out .= "<div></div>";
+    }
+
+    for ($day = 1; $day <= $days_in_month; $day++) {
+
+        $out .= "<div style='border:1px solid #ddd;min-height:80px;padding:6px;border-radius:8px;background:#fff;'>";
+        $out .= "<div style='font-weight:600;margin-bottom:4px;'>$day</div>";
+
+        if (isset($events_by_day[$day])) {
+            foreach ($events_by_day[$day] as $event) {
+                $link = get_permalink($event->ID);
+                $out .= "<a href='$link' style='display:block;background:#f46e16;color:#fff;padding:4px 6px;border-radius:6px;font-size:12px;margin-bottom:4px;text-decoration:none;'>Repair Café</a>";
+            }
+        }
+
+        $out .= "</div>";
+    }
+
+    $out .= "</div>";
+    $out .= "</div>";
+
+    return $out;
+}
+    
 }

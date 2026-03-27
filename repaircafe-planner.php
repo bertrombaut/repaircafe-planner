@@ -41,6 +41,7 @@ class RepairCafePlanner {
         add_filter('wp_nav_menu_objects', [$this, 'filter_menu_items'], 10, 2);
         add_action('admin_init', [$this, 'block_volunteer_backend']);
         add_filter('show_admin_bar', [$this, 'hide_admin_bar_for_volunteers']);
+        add_action('admin_init', [$this, 'handle_admin_signup_actions']);
         add_action('show_user_profile', [$this, 'render_attendance_start_field']);
         add_action('edit_user_profile', [$this, 'render_attendance_start_field']);
         add_action('personal_options_update', [$this, 'save_attendance_start_field']);
@@ -1174,6 +1175,59 @@ if ($past) {
 
         return $out;
     }
+
+public function handle_admin_signup_actions() {
+    if (!current_user_can('manage_options')) {
+        return;
+    }
+
+    if (empty($_GET['rc_admin_action']) || empty($_GET['event_id']) || empty($_GET['user_id'])) {
+        return;
+    }
+
+    $action   = sanitize_text_field($_GET['rc_admin_action']);
+    $event_id = (int) $_GET['event_id'];
+    $user_id  = (int) $_GET['user_id'];
+    $nonce    = $_GET['_wpnonce'] ?? '';
+
+    if (!wp_verify_nonce($nonce, 'rc_admin_' . $action . '_' . $event_id . '_' . $user_id)) {
+        wp_die('Ongeldige beveiligingscheck.');
+    }
+
+    if ($action === 'signup_user') {
+        $ok = $this->do_signup($event_id, $user_id);
+
+        if ($ok) {
+            $this->send_signup_emails($event_id, $user_id);
+            wp_safe_redirect(admin_url('edit.php?post_type=rc_event&page=rc_signups&rc_msg=' . rawurlencode('Vrijwilliger aangemeld ✅')));
+            exit;
+        }
+
+        wp_safe_redirect(admin_url('edit.php?post_type=rc_event&page=rc_signups&rc_msg=' . rawurlencode('Aanmelden mislukt ❌')));
+        exit;
+    }
+
+    if ($action === 'unsubscribe_user') {
+        global $wpdb;
+
+        $res = $wpdb->delete(
+            $this->table_name(),
+            [
+                'event_id' => $event_id,
+                'user_id'  => $user_id,
+            ],
+            ['%d', '%d']
+        );
+
+        if ($res !== false) {
+            wp_safe_redirect(admin_url('edit.php?post_type=rc_event&page=rc_signups&rc_msg=' . rawurlencode('Vrijwilliger afgemeld ✅')));
+            exit;
+        }
+
+        wp_safe_redirect(admin_url('edit.php?post_type=rc_event&page=rc_signups&rc_msg=' . rawurlencode('Afmelden mislukt ❌')));
+        exit;
+    }
+}
     
     /* -------------------- Admin menu -------------------- */
     public function admin_menu() {

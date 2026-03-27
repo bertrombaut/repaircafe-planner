@@ -337,7 +337,16 @@ function repaircafe_admin_email_lists_page() {
         echo '<h2>' . esc_html($title) . '</h2>';
         echo '<p><strong>Aantal vrijwilligers:</strong> ' . esc_html(count($users)) . '</p>';
 
-                echo '<h3>E-mailadressen (; gescheiden)</h3>';
+                echo '<h3>Snelle lijst (alleen e-mails)</h3>';
+        echo '<textarea id="rcp-email-list-compact" readonly style="width:100%;max-width:1000px;height:80px;font-size:13px;">' . esc_textarea(implode(', ', $emails)) . '</textarea>';
+
+        echo '<p style="margin-top:10px;">';
+        echo '<button type="button" class="button button-primary" onclick="var f=document.getElementById(\'rcp-email-list-compact\'); f.focus(); f.select(); document.execCommand(\'copy\'); this.innerText=\'Gekopieerd\';">Kopieer snelle lijst</button>';
+        echo '</p>';
+
+        echo '<hr style="margin:25px 0;">';
+
+        echo '<h3>E-mailadressen (; gescheiden)</h3>';
         echo '<textarea id="rcp-email-list" readonly style="width:100%;max-width:1000px;height:120px;">' . esc_textarea(implode('; ', $emails)) . '</textarea>';
 
         echo '<h3 style="margin-top:20px;">E-mailadressen (, gescheiden - BCC)</h3>';

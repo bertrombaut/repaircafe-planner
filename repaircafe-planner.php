@@ -41,6 +41,10 @@ class RepairCafePlanner {
         add_filter('wp_nav_menu_objects', [$this, 'filter_menu_items'], 10, 2);
         add_action('admin_init', [$this, 'block_volunteer_backend']);
         add_filter('show_admin_bar', [$this, 'hide_admin_bar_for_volunteers']);
+        add_action('show_user_profile', [$this, 'render_attendance_start_field']);
+        add_action('edit_user_profile', [$this, 'render_attendance_start_field']);
+        add_action('personal_options_update', [$this, 'save_attendance_start_field']);
+        add_action('edit_user_profile_update', [$this, 'save_attendance_start_field']);
     }
 
     private function table_name() {
@@ -1397,6 +1401,40 @@ $button = "<p style='margin-top:20px;'>
 </p>";
 
 return $content . $info . $button;
+}
+
+public function render_attendance_start_field($user) {
+    if (!current_user_can('manage_options')) {
+        return;
+    }
+
+    $value = get_user_meta($user->ID, 'rc_attendance_start_count', true);
+    $value = ($value === '') ? 0 : (int) $value;
+    ?>
+    <h2>Repair Café aanwezigheden</h2>
+    <table class="form-table">
+        <tr>
+            <th><label for="rc_attendance_start_count">Beginstand aanwezigheden</label></th>
+            <td>
+                <input type="number" min="0" step="1" name="rc_attendance_start_count" id="rc_attendance_start_count" value="<?php echo esc_attr($value); ?>" class="regular-text">
+                <p class="description">Vul hier het aantal eerdere keren in dat deze vrijwilliger al aanwezig is geweest.</p>
+            </td>
+        </tr>
+    </table>
+    <?php
+}
+
+public function save_attendance_start_field($user_id) {
+    if (!current_user_can('manage_options')) {
+        return;
+    }
+
+    $value = isset($_POST['rc_attendance_start_count']) ? (int) $_POST['rc_attendance_start_count'] : 0;
+    if ($value < 0) {
+        $value = 0;
+    }
+
+    update_user_meta($user_id, 'rc_attendance_start_count', $value);
 }
     
     /* -------------------- Styles -------------------- */

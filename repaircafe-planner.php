@@ -1194,6 +1194,14 @@ if ($past) {
             'rc_settings',
             [$this, 'settings_page']
         );
+    add_submenu_page(
+        'edit.php?post_type=rc_event',
+        'Opkomst vrijwilligers',
+        'Opkomst vrijwilligers',
+        'manage_options',
+        'rc_attendance_overview',
+        [$this, 'attendance_overview_page']
+);
     }
 
     public function settings_page() {
@@ -1435,6 +1443,61 @@ public function save_attendance_start_field($user_id) {
     }
 
     update_user_meta($user_id, 'rc_attendance_start_count', $value);
+}
+
+public function attendance_overview_page() {
+    if (!current_user_can('manage_options')) return;
+
+    global $wpdb;
+
+    $users = get_users([
+        'role__in' => [self::ROLE, 'administrator'],
+        'orderby'  => 'display_name',
+        'order'    => 'ASC',
+    ]);
+
+    echo '<div class="wrap"><h1>Opkomst vrijwilligers</h1>';
+    echo '<table class="widefat striped" style="max-width:900px;">';
+    echo '<thead><tr>';
+    echo '<th>Naam</th>';
+    echo '<th>E-mail</th>';
+    echo '<th>Beginstand</th>';
+    echo '<th>Gekomen via planner</th>';
+    echo '<th>Totaal</th>';
+    echo '</tr></thead><tbody>';
+
+    if (!$users) {
+        echo '<tr><td colspan="5">Geen vrijwilligers gevonden.</td></tr>';
+    } else {
+        foreach ($users as $user) {
+            $start = (int) get_user_meta($user->ID, 'rc_attendance_start_count', true);
+
+            $count = (int) $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*)
+                 FROM {$this->table_name()} s
+                 INNER JOIN {$wpdb->posts} p ON s.event_id = p.ID
+                 INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
+                 WHERE s.user_id = %d
+                 AND p.post_type = 'rc_event'
+                 AND pm.meta_key = '_rc_event_date'
+                 AND pm.meta_value < %s",
+                $user->ID,
+                current_time('Y-m-d')
+            ));
+
+            $total = $start + $count;
+
+            echo '<tr>';
+            echo '<td>' . esc_html($user->display_name) . '</td>';
+            echo '<td>' . esc_html($user->user_email) . '</td>';
+            echo '<td>' . esc_html($start) . '</td>';
+            echo '<td>' . esc_html($count) . '</td>';
+            echo '<td><strong>' . esc_html($total) . '</strong></td>';
+            echo '</tr>';
+        }
+    }
+
+    echo '</tbody></table></div>';
 }
     
     /* -------------------- Styles -------------------- */

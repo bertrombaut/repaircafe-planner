@@ -337,11 +337,17 @@ function repaircafe_admin_email_lists_page() {
         echo '<h2>' . esc_html($title) . '</h2>';
         echo '<p><strong>Aantal vrijwilligers:</strong> ' . esc_html(count($users)) . '</p>';
 
-                echo '<h3>Snelle lijst (alleen e-mails)</h3>';
+                  $mailto_bcc     = rawurlencode(implode(',', $emails));
+        $mailto_subject = rawurlencode('Repair Café');
+        $mailto_body    = rawurlencode('Hallo,');
+        $mailto_link    = 'mailto:?bcc=' . $mailto_bcc . '&subject=' . $mailto_subject . '&body=' . $mailto_body;
+
+        echo '<h3>Snelle lijst (alleen e-mails)</h3>';
         echo '<textarea id="rcp-email-list-compact" readonly style="width:100%;max-width:1000px;height:80px;font-size:13px;">' . esc_textarea(implode(', ', $emails)) . '</textarea>';
 
         echo '<p style="margin-top:10px;">';
-        echo '<button type="button" class="button button-primary" onclick="var f=document.getElementById(\'rcp-email-list-compact\'); f.focus(); f.select(); document.execCommand(\'copy\'); this.innerText=\'Gekopieerd\';">Kopieer snelle lijst</button>';
+        echo '<button type="button" class="button button-primary" onclick="var f=document.getElementById(\'rcp-email-list-compact\'); f.focus(); f.select(); document.execCommand(\'copy\'); this.innerText=\'Gekopieerd\';">Kopieer snelle lijst</button> ';
+        echo '<a href="' . esc_url($mailto_link) . '" class="button button-primary">Open mail</a>';
         echo '</p>';
 
         echo '<hr style="margin:25px 0;">';

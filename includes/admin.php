@@ -337,10 +337,15 @@ function repaircafe_admin_email_lists_page() {
         echo '<h2>' . esc_html($title) . '</h2>';
         echo '<p><strong>Aantal vrijwilligers:</strong> ' . esc_html(count($users)) . '</p>';
 
-                echo '<h3>E-mailadressen</h3>';
-        echo '<textarea id="rcp-email-list" readonly style="width:100%;max-width:1000px;height:140px;">' . esc_textarea(implode('; ', $emails)) . '</textarea>';
+                echo '<h3>E-mailadressen (; gescheiden)</h3>';
+        echo '<textarea id="rcp-email-list" readonly style="width:100%;max-width:1000px;height:120px;">' . esc_textarea(implode('; ', $emails)) . '</textarea>';
+
+        echo '<h3 style="margin-top:20px;">E-mailadressen (, gescheiden - BCC)</h3>';
+        echo '<textarea id="rcp-email-list-bcc" readonly style="width:100%;max-width:1000px;height:120px;">' . esc_textarea(implode(', ', $emails)) . '</textarea>';
+
         echo '<p style="margin-top:10px;">';
-        echo '<button type="button" class="button button-secondary" onclick="var field=document.getElementById(\'rcp-email-list\'); field.focus(); field.select(); document.execCommand(\'copy\'); this.innerText=\'Gekopieerd\';">Kopieer e-mails</button>';
+        echo '<button type="button" class="button button-secondary" onclick="var f=document.getElementById(\'rcp-email-list\'); f.focus(); f.select(); document.execCommand(\'copy\'); this.innerText=\'Gekopieerd\';">Kopieer ; lijst</button> ';
+        echo '<button type="button" class="button button-secondary" onclick="var f=document.getElementById(\'rcp-email-list-bcc\'); f.focus(); f.select(); document.execCommand(\'copy\'); this.innerText=\'Gekopieerd\';">Kopieer BCC lijst</button>';
         echo '</p>';
         
         if ( empty($users) ) {

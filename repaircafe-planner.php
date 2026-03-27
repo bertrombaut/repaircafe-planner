@@ -1369,7 +1369,8 @@ if ($signups) {
     $info .= "</ul></div>";
 }
 
-$info .= "</div>";
+$info .= "<div class='rc-actions'>" . $this->render_buttons($event_id) . "</div>";    
+    $info .= "</div>";
 
 $button = "<p style='margin-top:20px;'>
 <a href='" . esc_url(home_url('/repair-cafe-dagen/')) . "' class='rc-btn'>← Terug naar kalender</a>

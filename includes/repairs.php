@@ -2,11 +2,29 @@
 if ( ! defined('ABSPATH') ) exit;
 
 /*
-EVENTS
-Deze functies sluiten nu aan op het bestaande rc_event post type
-in plaats van de oude rcp_events tabel.
+|--------------------------------------------------------------------------
+| EVENTS
+|--------------------------------------------------------------------------
+| Deze functies werken op het bestaande rc_event post type.
+| Er wordt dus niet meer gewerkt met de oude rcp_events tabel.
 */
 
+/**
+ * Haalt alle Repair Café events op.
+ *
+ * Doet:
+ * - leest alle rc_event berichten uit WordPress
+ * - sorteert op eventdatum oplopend
+ *
+ * In:
+ * - niets
+ *
+ * Uit:
+ * - array met event posts
+ *
+ * Waarom zo gebouwd:
+ * - events staan nu als normaal WordPress post type opgeslagen
+ */
 function repaircafe_get_events() {
 
     return get_posts(array(
@@ -19,6 +37,20 @@ function repaircafe_get_events() {
     ));
 }
 
+/**
+ * Haalt 1 event op via ID.
+ *
+ * Doet:
+ * - controleert of het bericht bestaat
+ * - controleert of het echt een rc_event is
+ *
+ * In:
+ * - $event_id: ID van het event
+ *
+ * Uit:
+ * - post object van het event
+ * - null als het geen geldig rc_event is
+ */
 function repaircafe_get_event( $event_id ) {
 
     $post = get_post( absint( $event_id ) );
@@ -30,9 +62,44 @@ function repaircafe_get_event( $event_id ) {
     return $post;
 }
 
+/**
+ * Placeholder voor event aanmaken.
+ *
+ * Doet:
+ * - nu nog niets
+ *
+ * In:
+ * - $data: gegevens voor nieuw event
+ *
+ * Uit:
+ * - 0
+ *
+ * Waarom zo gebouwd:
+ * - functie bestaat alvast als vaste plek voor later
+ */
 function repaircafe_create_event( $data ) {
     return 0;
 }
+
+/**
+ * Verwijdert een event definitief.
+ *
+ * Doet:
+ * - controleert of het ID geldig is
+ * - controleert of het om rc_event gaat
+ * - verwijdert het event permanent
+ * - verwijdert daarna gekoppelde expertise-regels van dat event
+ *
+ * In:
+ * - $event_id: ID van het event
+ *
+ * Uit:
+ * - true bij succes
+ * - false bij mislukken
+ *
+ * Waarom zo gebouwd:
+ * - na het verwijderen van het event moeten gekoppelde event-expertises ook weg
+ */
 function repaircafe_delete_event( $event_id ) {
 
     global $wpdb;
@@ -59,9 +126,26 @@ function repaircafe_delete_event( $event_id ) {
 }
 
 /*
-EXPERTISES
+|--------------------------------------------------------------------------
+| EXPERTISES
+|--------------------------------------------------------------------------
+| Hier staan de functies voor expertises en koppelingen tussen
+| gebruikers en expertises.
 */
 
+/**
+ * Haalt alle expertises op.
+ *
+ * Doet:
+ * - leest alle rijen uit de expertisetabel
+ * - sorteert alfabetisch op naam
+ *
+ * In:
+ * - niets
+ *
+ * Uit:
+ * - array met expertise-objecten
+ */
 function repaircafe_get_expertises() {
 
     global $wpdb;
@@ -73,6 +157,25 @@ function repaircafe_get_expertises() {
     );
 }
 
+/**
+ * Voegt een expertise toe als die nog niet bestaat.
+ *
+ * Doet:
+ * - maakt de naam schoon
+ * - stopt als de naam leeg is
+ * - zoekt eerst of die expertise al bestaat
+ * - voegt anders een nieuwe rij toe
+ *
+ * In:
+ * - $name: naam van de expertise
+ *
+ * Uit:
+ * - ID van bestaande of nieuwe expertise
+ * - 0 bij mislukken
+ *
+ * Waarom zo gebouwd:
+ * - dubbele expertises met dezelfde naam worden zo voorkomen
+ */
 function repaircafe_add_expertise( $name ) {
 
     global $wpdb;
@@ -110,6 +213,18 @@ function repaircafe_add_expertise( $name ) {
     return (int) $wpdb->insert_id;
 }
 
+/**
+ * Haalt alle expertise-ID's van 1 gebruiker op.
+ *
+ * Doet:
+ * - leest alle gekoppelde expertises van een gebruiker
+ *
+ * In:
+ * - $user_id: ID van de gebruiker
+ *
+ * Uit:
+ * - array met expertise-ID's
+ */
 function repaircafe_get_user_expertises( $user_id ) {
 
     global $wpdb;
@@ -129,6 +244,23 @@ function repaircafe_get_user_expertises( $user_id ) {
     );
 }
 
+/**
+ * Zet de expertises van een gebruiker opnieuw.
+ *
+ * Doet:
+ * - wist eerst alle bestaande koppelingen van die gebruiker
+ * - zet daarna de nieuwe koppelingen terug
+ *
+ * In:
+ * - $user_id: ID van de gebruiker
+ * - $expertises: array met expertise-ID's
+ *
+ * Uit:
+ * - true of false
+ *
+ * Waarom zo gebouwd:
+ * - eerst leegmaken en daarna opnieuw vullen houdt de koppeling simpel en schoon
+ */
 function repaircafe_set_user_expertises( $user_id, $expertises ) {
 
     global $wpdb;
@@ -167,6 +299,20 @@ function repaircafe_set_user_expertises( $user_id, $expertises ) {
     return true;
 }
 
+/**
+ * Haalt de namen van expertises van 1 gebruiker op.
+ *
+ * Doet:
+ * - koppelt user_expertises aan expertises
+ * - geeft alleen de namen terug
+ * - sorteert alfabetisch
+ *
+ * In:
+ * - $user_id: ID van de gebruiker
+ *
+ * Uit:
+ * - array met namen van expertises
+ */
 function repaircafe_get_user_expertise_names( $user_id ) {
 
     global $wpdb;
@@ -191,6 +337,34 @@ function repaircafe_get_user_expertise_names( $user_id ) {
     );
 }
 
+/*
+|--------------------------------------------------------------------------
+| KALENDER
+|--------------------------------------------------------------------------
+| Bouwt de maandkalender op de voorkant van de site.
+*/
+
+/**
+ * Rendert de maandkalender met events.
+ *
+ * Doet:
+ * - leest maand en jaar uit de URL
+ * - berekent vorige en volgende maand
+ * - haalt alle events op
+ * - zet events van de gekozen maand per dag klaar
+ * - bouwt de HTML-kalender
+ *
+ * In:
+ * - rc_month uit de URL
+ * - rc_year uit de URL
+ *
+ * Uit:
+ * - HTML-string van de kalender
+ *
+ * Waarom zo gebouwd:
+ * - 1 maand tegelijk houdt het overzichtelijk
+ * - events worden eerst per dag gegroepeerd zodat de weergave simpel blijft
+ */
 function repaircafe_render_calendar() {
 
     $month = isset($_GET['rc_month']) ? intval($_GET['rc_month']) : date('n');
@@ -199,7 +373,7 @@ function repaircafe_render_calendar() {
     if ($month < 1) { $month = 12; $year--; }
     if ($month > 12) { $month = 1; $year++; }
 
-    $first_day_ts = strtotime("$year-$month-01");
+    $first_day_ts  = strtotime("$year-$month-01");
     $days_in_month = date('t', $first_day_ts);
     $start_weekday = date('N', $first_day_ts);
 
@@ -211,6 +385,7 @@ function repaircafe_render_calendar() {
         if (!$date) continue;
 
         $event_ts = strtotime($date);
+
         if (date('n', $event_ts) == $month && date('Y', $event_ts) == $year) {
             $day = intval(date('j', $event_ts));
             $events_by_day[$day][] = $event;
@@ -240,6 +415,7 @@ function repaircafe_render_calendar() {
         $out .= "<div style='font-weight:600;text-align:center;'>$d</div>";
     }
 
+    // Lege vakken voor de eerste dag van de maand zodat de kalender goed uitlijnt.
     for ($i = 1; $i < $start_weekday; $i++) {
         $out .= "<div></div>";
     }
@@ -252,6 +428,8 @@ function repaircafe_render_calendar() {
         if (isset($events_by_day[$day])) {
             foreach ($events_by_day[$day] as $event) {
                 $link = get_permalink($event->ID);
+
+                // Er is normaal maar 1 event per dag, maar de code ondersteunt er toch meerdere.
                 $out .= "<a href='$link' style='display:block;background:#f46e16;color:#fff;padding:4px 6px;border-radius:6px;font-size:12px;margin-bottom:4px;text-decoration:none;'>Repair Café</a>";
             }
         }
@@ -264,4 +442,3 @@ function repaircafe_render_calendar() {
 
     return $out;
 }
-    

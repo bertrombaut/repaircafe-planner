@@ -413,7 +413,7 @@ class RepairCafePlanner {
         foreach ($event_expertises as $row) {
             if ((int) $row->expertise_id === $user_expertise_id) {
                 if ($row->is_full) {
-                    return 'Voor jouw expertise is geen plek meer.';
+                    return 'Helaas, voor jouw expertise is er vandaag geen plek meer. We zien je graag de volgende keer.';
                 }
 
                 return '';

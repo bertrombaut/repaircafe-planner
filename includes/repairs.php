@@ -189,6 +189,7 @@ function repaircafe_get_user_expertise_names( $user_id ) {
             $user_id
         )
     );
+}
 
 function repaircafe_render_calendar() {
 
@@ -200,7 +201,7 @@ function repaircafe_render_calendar() {
 
     $first_day_ts = strtotime("$year-$month-01");
     $days_in_month = date('t', $first_day_ts);
-    $start_weekday = date('N', $first_day_ts); // 1 = ma, 7 = zo
+    $start_weekday = date('N', $first_day_ts);
 
     $events = repaircafe_get_events();
     $events_by_day = [];

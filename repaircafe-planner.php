@@ -1281,6 +1281,9 @@ public function handle_admin_signup_actions() {
         ]);
 
         echo '<div class="wrap"><h1>Aanmeldingen</h1>';
+        if (!empty($_GET['rc_msg'])) {
+    echo '<div class="notice notice-success is-dismissible"><p>' . esc_html(rawurldecode($_GET['rc_msg'])) . '</p></div>';
+}
         echo '<p>Per event zie je hieronder wie er aangemeld is.</p>';
 
         if (!$events) {
@@ -1307,6 +1310,12 @@ public function handle_admin_signup_actions() {
                 $event_id
             ));
 
+$all_volunteers = get_users([
+    'role__in' => [self::ROLE, 'administrator'],
+    'orderby'  => 'display_name',
+    'order'    => 'ASC',
+]);
+            
             $expertise_counts = $wpdb->get_results($wpdb->prepare(
                 "SELECT ee.expertise_id, e.name, ee.max_volunteers,
                         COUNT(DISTINCT s.id) AS count
@@ -1376,6 +1385,44 @@ public function handle_admin_signup_actions() {
 
                     
                 echo '</ol>';
+if ($all_volunteers) {
+    echo '<div style="margin-top:14px;"><strong>Vrijwilligers beheren:</strong></div>';
+    echo '<ul style="margin-top:8px;">';
+
+    foreach ($all_volunteers as $volunteer) {
+        $is_signed = $this->is_signed_up($event_id, $volunteer->ID);
+
+        echo '<li style="margin-bottom:8px;">';
+        echo esc_html($volunteer->display_name);
+
+        if ($volunteer->user_email) {
+            echo ' <span style="color:#666;">- ' . esc_html($volunteer->user_email) . '</span>';
+        }
+
+        echo ' ';
+
+        if ($is_signed) {
+            $url = wp_nonce_url(
+                admin_url('edit.php?post_type=rc_event&page=rc_signups&rc_admin_action=unsubscribe_user&event_id=' . $event_id . '&user_id=' . $volunteer->ID),
+                'rc_admin_unsubscribe_user_' . $event_id . '_' . $volunteer->ID
+            );
+
+            echo '<a href="' . esc_url($url) . '" class="button">Afmelden</a>';
+        } else {
+            $url = wp_nonce_url(
+                admin_url('edit.php?post_type=rc_event&page=rc_signups&rc_admin_action=signup_user&event_id=' . $event_id . '&user_id=' . $volunteer->ID),
+                'rc_admin_signup_user_' . $event_id . '_' . $volunteer->ID
+            );
+
+            echo '<a href="' . esc_url($url) . '" class="button button-primary">Aanmelden</a>';
+        }
+
+        echo '</li>';
+    }
+
+    echo '</ul>';
+}
+                
             }
 
             echo '</div>';

@@ -430,7 +430,7 @@ function repaircafe_render_calendar() {
                 $link = get_permalink($event->ID);
 
                 // Er is normaal maar 1 event per dag, maar de code ondersteunt er toch meerdere.
-                $out .= "<a href='$link' style='display:block;background:#f46e16;color:#fff;padding:4px 6px;border-radius:6px;font-size:12px;margin-bottom:4px;text-decoration:none;'>Repair Café</a>";
+                $out .= "<a href='" . add_query_arg(['rc_month' => $month, 'rc_year' => $year], $link) . "' style='display:block;background:#f46e16;color:#fff;padding:4px 6px;border-radius:6px;font-size:12px;margin-bottom:4px;text-decoration:none;'>Repair Café</a>";
             }
         }
 

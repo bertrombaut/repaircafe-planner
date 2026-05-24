@@ -859,7 +859,7 @@ private function send_unsubscribe_emails($event_id, $user_id) {
 
             $out .= "<div>" . wpautop(wp_kses_post(get_the_content())) . "</div>";
             $out .= "<p style='margin-top:20px;'>
-<a href='" . esc_url(home_url('/repair-cafe-dagen/')) . "' class='rc-btn'>← Terug naar kalender</a>
+<a href='" . esc_url(add_query_arg(['rc_month' => isset($_GET['rc_month']) ? intval($_GET['rc_month']) : date('n'), 'rc_year' => isset($_GET['rc_year']) ? intval($_GET['rc_year']) : date('Y')], home_url('/repair-cafe-dagen/'))) . "' class='rc-btn'>← Terug naar kalender</a>
 </p>";
 
             $signups = $wpdb->get_results($wpdb->prepare(
@@ -1517,7 +1517,7 @@ $info .= "<div class='rc-actions'>" . $this->render_buttons($event_id) . "</div>
     $info .= "</div>";
 
 $button = "<p style='margin-top:20px;'>
-<a href='" . esc_url(home_url('/repair-cafe-dagen/')) . "' class='rc-btn'>← Terug naar kalender</a>
+<a href='" . esc_url(add_query_arg(['rc_month' => isset($_GET['rc_month']) ? intval($_GET['rc_month']) : date('n'), 'rc_year' => isset($_GET['rc_year']) ? intval($_GET['rc_year']) : date('Y')], home_url('/repair-cafe-dagen/'))) . "' class='rc-btn'>← Terug naar kalender</a>
 </p>";
 
 return $content . $info . $button;

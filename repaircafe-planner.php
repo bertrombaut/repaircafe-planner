@@ -1035,6 +1035,9 @@ if ($past) {
 
         $error = '';
         if (isset($_POST['rc_login_submit'])) {
+            if (!isset($_POST['rc_login_nonce']) || !wp_verify_nonce($_POST['rc_login_nonce'], 'rc_login')) {
+                wp_die('Ongeldige beveiligingscheck.');
+            }
             $creds = [
                 'user_login'    => sanitize_text_field($_POST['rc_username'] ?? ''),
                 'user_password' => $_POST['rc_password'] ?? '',

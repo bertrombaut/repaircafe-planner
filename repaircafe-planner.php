@@ -1053,7 +1053,12 @@ if ($past) {
         $out .= wp_login_form($args);
         $out .= "<p style='margin-top:10px;'><a href='" . esc_url(home_url('/wachtwoord-vergeten/')) . "'>Wachtwoord vergeten?</a></p>";
         $out .= "</div>";
-
+         $out .= "<script>
+            document.addEventListener('DOMContentLoaded', function() {
+            var err = document.querySelector('#login_error, .login-error, p.message');
+            if (err) err.style.display = 'none';
+});
+</script>";
         return $out;
     }
 

@@ -1064,7 +1064,6 @@ if ($past) {
 
         return $out;
     }
-    }
 
     public function filter_menu_items($items, $args) {
         $allowed_logged_in = ['repair cafe dagen', 'mijn aanmeldingen'];

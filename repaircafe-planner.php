@@ -25,6 +25,7 @@ class RepairCafePlanner {
         add_action('add_meta_boxes', [$this, 'add_metaboxes']);
         add_action('save_post', [$this, 'save_event_meta']);
         add_action('init', [$this, 'handle_actions']);
+        add_filter('login_errors', function() { return 'Inloggen mislukt. Controleer je e-mailadres en wachtwoord.'; });
 
         add_action('admin_menu', [$this, 'admin_menu']);
         add_action('admin_init', [$this, 'register_settings']);

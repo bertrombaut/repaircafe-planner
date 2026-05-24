@@ -1033,33 +1033,37 @@ if ($past) {
             return '<p>Je bent al ingelogd.</p>';
         }
 
-        $args = [
-            'echo'           => false,
-            'remember'       => true,
-            'redirect'       => home_url('/repair-cafe-dagen/'),
-            'form_id'        => 'rc-loginform',
-            'id_username'    => 'rc-user-login',
-            'id_password'    => 'rc-user-pass',
-            'id_remember'    => 'rc-rememberme',
-            'id_submit'      => 'rc-login-submit',
-            'label_username' => 'E-mailadres of gebruikersnaam',
-            'label_password' => 'Wachtwoord',
-            'label_remember' => 'Ingelogd blijven',
-            'label_log_in'   => 'Inloggen',
-        ];
+        $error = '';
+        if (isset($_POST['rc_login_submit'])) {
+            $creds = [
+                'user_login'    => sanitize_text_field($_POST['rc_username'] ?? ''),
+                'user_password' => $_POST['rc_password'] ?? '',
+                'remember'      => isset($_POST['rc_remember']),
+            ];
+            $user = wp_signon($creds, false);
+            if (is_wp_error($user)) {
+                $error = '<p class="rc-login-error" style="color:red;margin-bottom:10px;">Inloggen mislukt. Controleer je e-mailadres en wachtwoord.</p>';
+            } else {
+                wp_redirect(home_url('/repair-cafe-dagen/'));
+                exit;
+            }
+        }
 
         $out  = "<div class='rc-card'>";
-        $out .= "<h3>Inloggen</h3>"; 
-        $out .= wp_login_form($args);
+        $out .= "<h3>Inloggen</h3>";
+        $out .= $error;
+        $out .= "<form method='post' action=''>";
+        $out .= wp_nonce_field('rc_login', 'rc_login_nonce', true, false);
+        $out .= "<p><label>E-mailadres of gebruikersnaam<br><input type='text' name='rc_username' required style='width:100%;padding:8px;'></label></p>";
+        $out .= "<p><label>Wachtwoord<br><input type='password' name='rc_password' required style='width:100%;padding:8px;'></label></p>";
+        $out .= "<p><label><input type='checkbox' name='rc_remember'> Ingelogd blijven</label></p>";
+        $out .= "<p><input type='submit' name='rc_login_submit' value='Inloggen' style='background:#e85d26;color:#fff;border:none;padding:10px 24px;cursor:pointer;'></p>";
+        $out .= "</form>";
         $out .= "<p style='margin-top:10px;'><a href='" . esc_url(home_url('/wachtwoord-vergeten/')) . "'>Wachtwoord vergeten?</a></p>";
         $out .= "</div>";
-         $out .= "<script>
-            document.addEventListener('DOMContentLoaded', function() {
-            var err = document.querySelector('#login_error, .login-error, p.message');
-            if (err) err.style.display = 'none';
-});
-</script>";
+
         return $out;
+    }
     }
 
     public function filter_menu_items($items, $args) {

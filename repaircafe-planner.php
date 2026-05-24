@@ -1049,6 +1049,8 @@ if ($past) {
 
         $out  = "<div class='rc-card'>";
         $out .= "<h3>Inloggen</h3>";
+            add_filter('login_errors', function() { return '<p class="rc-login-error">Inloggen mislukt. Controleer je e-mailadres en wachtwoord.</p>'; });
+        $out .= wp_login_form($args);
         $out .= wp_login_form($args);
         $out .= "<p style='margin-top:10px;'><a href='" . esc_url(home_url('/wachtwoord-vergeten/')) . "'>Wachtwoord vergeten?</a></p>";
         $out .= "</div>";

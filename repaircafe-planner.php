@@ -174,9 +174,9 @@ class RepairCafePlanner {
     }
 
     public function render_location_metabox($post) {
-        $name    = get_post_meta($post->ID, '_rc_location_name', true);
-        $address = get_post_meta($post->ID, '_rc_location_address', true);
-        $city    = get_post_meta($post->ID, '_rc_location_city', true);
+       $name    = get_post_meta($post->ID, '_rc_location_name', true) ?: 'Huis van Renkum';
+        $address = get_post_meta($post->ID, '_rc_location_address', true) ?: 'Europalaan 11';
+        $city    = get_post_meta($post->ID, '_rc_location_city', true) ?: 'Renkum';
 
         echo '<p><label><strong>Naam</strong></label><br>';
         echo '<input type="text" name="rc_location_name" value="' . esc_attr($name) . '" style="width:100%;" placeholder="Bijv. Dorpshuis X"></p>';

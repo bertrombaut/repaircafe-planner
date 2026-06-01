@@ -1058,7 +1058,12 @@ if ($past) {
         $out .= "<form method='post' action=''>";
         $out .= wp_nonce_field('rc_login', 'rc_login_nonce', true, false);
         $out .= "<p><label>E-mailadres of gebruikersnaam<br><input type='text' name='rc_username' required style='width:100%;padding:8px;'></label></p>";
-        $out .= "<p><label>Wachtwoord<br><input type='password' name='rc_password' required style='width:100%;padding:8px;'></label></p>";
+        $out .= "<p><label>Wachtwoord<br>";
+        $out .= "<span style='position:relative;display:block;'>";
+        $out .= "<input type='password' name='rc_password' id='rc_password' required style='width:100%;padding:8px;padding-right:80px;box-sizing:border-box;'>";
+        $out .= "<button type='button' id='rc_password_toggle' style='position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;color:#e85d26;cursor:pointer;font-size:13px;padding:4px;'>Toon</button>";
+        $out .= "</span></label></p>";
+        $out .= "<script>(function(){var b=document.getElementById('rc_password_toggle');var f=document.getElementById('rc_password');if(b&&f){b.addEventListener('click',function(){if(f.type==='password'){f.type='text';b.textContent='Verberg';}else{f.type='password';b.textContent='Toon';}});}})();</script>";
         $out .= "<p><label><input type='checkbox' name='rc_remember'> Ingelogd blijven</label></p>";
         $out .= "<p><input type='submit' name='rc_login_submit' value='Inloggen' style='background:#e85d26;color:#fff;border:none;padding:10px 24px;cursor:pointer;'></p>";
         $out .= "</form>";

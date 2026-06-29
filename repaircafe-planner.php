@@ -458,9 +458,10 @@ class RepairCafePlanner {
 }
 
             $out .= "<li class='rc-expertise-item'>";
-          $dot = $row->is_full
-   ? "<span style='margin-right:10px;vertical-align:middle;display:inline-flex;align-items:center;'><svg width='28' height='28' viewBox='0 0 24 24' aria-hidden='true' xmlns='http://www.w3.org/2000/svg'><path fill='#00a000' d='M9.55 18.3 4.7 13.46a1 1 0 1 1 1.41-1.42l3.44 3.44 8.34-8.34a1 1 0 1 1 1.41 1.41L10.96 18.3a1 1 0 0 1-1.41 0Z'/></svg></span>"
-    : "<span style='margin-right:10px;vertical-align:middle;display:inline-flex;align-items:center;'><svg width='28' height='28' viewBox='0 0 24 24' aria-hidden='true' xmlns='http://www.w3.org/2000/svg'><path fill='#e60000' d='M18.3 5.71a1 1 0 0 1 0 1.41L13.41 12l4.89 4.88a1 1 0 1 1-1.41 1.42L12 13.41l-4.88 4.89a1 1 0 0 1-1.42-1.41L10.59 12 5.7 7.12A1 1 0 0 1 7.12 5.7L12 10.59l4.89-4.88a1 1 0 0 1 1.41 0Z'/></svg></span>";
+           $dot = $row->is_full
+   ? "<span style='margin-right:10px;vertical-align:middle;display:inline-flex;align-items:center;'><svg width='28' height='28' viewBox='0 0 24 24' aria-hidden='true' xmlns='http://www.w3.org/2000/svg'><path fill='#e60000' d='M18.3 5.71a1 1 0 0 1 0 1.41L13.41 12l4.89 4.88a1 1 0 1 1-1.41 1.42L12 13.41l-4.88 4.89a1 1 0 0 1-1.42-1.41L10.59 12 5.7 7.12A1 1 0 0 1 7.12 5.7L12 10.59l4.89-4.88a1 1 0 0 1 1.41 0Z'/></svg></span>"
+    : "<span style='margin-right:10px;vertical-align:middle;display:inline-flex;align-items:center;'><svg width='28' height='28' viewBox='0 0 24 24' aria-hidden='true' xmlns='http://www.w3.org/2000/svg'><path fill='#00a000' d='M9.55 18.3 4.7 13.46a1 1 0 1 1 1.41-1.42l3.44 3.44 8.34-8.34a1 1 0 1 1 1.41 1.41L10.96 18.3a1 1 0 0 1-1.41 0Z'/></svg></span>";
+
 $out .= "<span class='rc-expertise-name'>" . $dot . esc_html($row->name) . "</span>";
             $out .= "<span class='rc-expertise-meta'>" . esc_html($status_text) . "</span>";
             $out .= "</li>";
@@ -1310,141 +1311,216 @@ public function handle_admin_signup_actions() {
         global $wpdb;
         $table = $this->table_name();
 
-        echo '<div style="display:flex;flex-direction:column;gap:14px;">';
+        // Events splitsen in toekomstig en afgelopen op basis van de eventdatum.
+        $today    = current_time('Y-m-d');
+        $upcoming = [];
+        $past     = [];
 
         foreach ($events as $e) {
-            $event_id = $e->ID;
-            $date     = get_post_meta($event_id, '_rc_event_date', true);
-            $time     = get_post_meta($event_id, '_rc_event_time', true);
-            $max      = $this->get_max_volunteers($event_id);
-
-            $pretty = $date ? date_i18n('l d-m-Y', strtotime($date)) : '';
-            $count  = $this->signup_count($event_id);
-
-            $rows = $wpdb->get_results($wpdb->prepare(
-                "SELECT user_id, created_at FROM $table WHERE event_id = %d ORDER BY created_at ASC",
-                $event_id
-            ));
-
-$all_volunteers = get_users([
-    'role__in' => [self::ROLE, 'administrator'],
-    'orderby'  => 'display_name',
-    'order'    => 'ASC',
-]);
-            
-            $expertise_counts = $wpdb->get_results($wpdb->prepare(
-                "SELECT ee.expertise_id, e.name, ee.max_volunteers,
-                        COUNT(DISTINCT s.id) AS count
-                 FROM {$wpdb->prefix}rcp_event_expertises ee
-                 LEFT JOIN {$wpdb->prefix}rcp_expertises e ON ee.expertise_id = e.id
-                 LEFT JOIN {$wpdb->prefix}rcp_user_expertises ue ON ue.expertise_id = ee.expertise_id
-                 LEFT JOIN {$table} s
-                    ON s.user_id = ue.user_id AND s.event_id = ee.event_id
-                 WHERE ee.event_id = %d
-                 GROUP BY ee.expertise_id, e.name, ee.max_volunteers
-                 ORDER BY e.name ASC",
-                $event_id
-            ));
-
-            echo '<div style="border:1px solid #ddd;background:#fff;padding:14px;border-radius:10px;">';
-            echo '<h2 style="margin:0 0 6px 0;">' . esc_html(get_the_title($event_id)) . '</h2>';
-
-            if ($pretty) {
-                echo '<div><strong>Wanneer:</strong> ' . esc_html($pretty) . ($time ? ' om ' . esc_html($time) : '') . '</div>';
-            }
-
-            echo '<div><strong>Aanmeldingen:</strong> ' . esc_html($count) . ($max !== null ? ' / ' . esc_html($max) : '') . '</div>';
-
-            if ($expertise_counts) {
-                echo '<ul style="margin:6px 0 0 15px;">';
-                foreach ($expertise_counts as $exp) {
-                    $free = max(0, (int) $exp->max_volunteers - (int) $exp->count);
-                    echo '<li>' . esc_html($exp->name) . ': ' . esc_html($exp->count) . '/' . esc_html($exp->max_volunteers) . ' bezet, ' . esc_html($free) . ' vrij</li>';
-                }
-                echo '</ul>';
-            }
-
-            if (!$rows) {
-                echo '<div style="margin-top:8px;color:#666;">(Nog geen aanmeldingen)</div>';
+            $event_date = get_post_meta($e->ID, '_rc_event_date', true);
+            if ($event_date && $event_date < $today) {
+                $past[] = $e;
             } else {
-                echo '<ol style="margin-top:8px;">';
-                                             foreach ($rows as $r) {
-                    $u = get_user_by('id', (int) $r->user_id);
-                    if (!$u) continue;
+                $upcoming[] = $e;
+            }
+        }
 
-                    $name  = $u->display_name ?: $u->user_login;
-                    $email = $u->user_email ?: '';
+        // Toekomstige events op datum oplopend (eerstvolgende bovenaan).
+        usort($upcoming, function ($a, $b) {
+            $da = get_post_meta($a->ID, '_rc_event_date', true);
+            $db = get_post_meta($b->ID, '_rc_event_date', true);
+            return strcmp((string) $da, (string) $db);
+        });
 
-                    $expertise = $wpdb->get_var($wpdb->prepare(
-                        "SELECT e.name
-                         FROM {$this->table_name()} s2
-                         LEFT JOIN {$wpdb->prefix}rcp_expertises e ON s2.expertise_id = e.id
-                         WHERE s2.user_id = %d AND s2.event_id = %d
-                         LIMIT 1",
-                        (int) $r->user_id,
-                        $event_id
-                    ));
+        // Afgelopen events op datum aflopend (meest recente bovenaan).
+        usort($past, function ($a, $b) {
+            $da = get_post_meta($a->ID, '_rc_event_date', true);
+            $db = get_post_meta($b->ID, '_rc_event_date', true);
+            return strcmp((string) $db, (string) $da);
+        });
 
-                    echo '<li>';
-                    echo esc_html($name);
+        // Sectie toekomstige events.
+        echo '<h2 style="margin-top:20px;">Toekomstige events</h2>';
+        if (!$upcoming) {
+            echo '<p style="color:#666;">Geen toekomstige events.</p>';
+        }
+        echo '<div style="display:flex;flex-direction:column;gap:14px;">';
 
-                    if ($expertise) {
-                        echo ' <span style="color:#666;">(' . esc_html($expertise) . ')</span>';
+        $upcoming_index = 0;
+        foreach ($upcoming as $e) {
+            $is_first = ($upcoming_index === 0);
+            $upcoming_index++;
+            $this->render_signup_event_card($e, false, $is_first);
+        }
+
+        echo '</div>';
+
+        // Sectie afgelopen events: altijd ingeklapt, wel uitklapbaar.
+        echo '<h2 style="margin-top:30px;">Afgelopen events</h2>';
+        if (!$past) {
+            echo '<p style="color:#666;">Geen afgelopen events.</p>';
+        }
+        echo '<div style="display:flex;flex-direction:column;gap:14px;">';
+
+        foreach ($past as $e) {
+            $this->render_signup_event_card($e, true, false);
+        }
+
+        echo '</div>';
+
+        echo '</div>';
+    }
+
+    /**
+     * Rendert één inklapbaar event-kaartje voor de aanmeldingen-pagina.
+     *
+     * @param WP_Post $e        Het event.
+     * @param bool    $is_past  True als het een afgelopen event is.
+     * @param bool    $is_open  True om dit kaartje standaard open te tonen.
+     */
+    private function render_signup_event_card($e, $is_past, $is_open) {
+        global $wpdb;
+        $table = $this->table_name();
+
+        $event_id = $e->ID;
+        $date     = get_post_meta($event_id, '_rc_event_date', true);
+        $time     = get_post_meta($event_id, '_rc_event_time', true);
+        $max      = $this->get_max_volunteers($event_id);
+
+        $pretty = $date ? date_i18n('l d-m-Y', strtotime($date)) : '';
+        $count  = $this->signup_count($event_id);
+
+        $rows = $wpdb->get_results($wpdb->prepare(
+            "SELECT user_id, created_at FROM $table WHERE event_id = %d ORDER BY created_at ASC",
+            $event_id
+        ));
+
+        $all_volunteers = get_users([
+            'role__in' => [self::ROLE, 'administrator'],
+            'orderby'  => 'display_name',
+            'order'    => 'ASC',
+        ]);
+
+        $expertise_counts = $wpdb->get_results($wpdb->prepare(
+            "SELECT ee.expertise_id, e.name, ee.max_volunteers,
+                    COUNT(DISTINCT s.id) AS count
+             FROM {$wpdb->prefix}rcp_event_expertises ee
+             LEFT JOIN {$wpdb->prefix}rcp_expertises e ON ee.expertise_id = e.id
+             LEFT JOIN {$wpdb->prefix}rcp_user_expertises ue ON ue.expertise_id = ee.expertise_id
+             LEFT JOIN {$table} s
+                ON s.user_id = ue.user_id AND s.event_id = ee.event_id
+             WHERE ee.event_id = %d
+             GROUP BY ee.expertise_id, e.name, ee.max_volunteers
+             ORDER BY e.name ASC",
+            $event_id
+        ));
+
+        // Inklapbaar kaartje. <details open> = open, zonder open = dicht.
+        echo '<details' . ($is_open ? ' open' : '') . ' style="border:1px solid #ddd;background:#fff;padding:14px;border-radius:10px;">';
+
+        // Samenvatting (altijd zichtbaar): titel, datum en aantal aanmeldingen.
+        $summary  = esc_html(get_the_title($event_id));
+        if ($pretty) {
+            $summary .= ' &middot; ' . esc_html($pretty) . ($time ? ' om ' . esc_html($time) : '');
+        }
+        $summary .= ' &middot; ' . esc_html($count) . ($max !== null ? '/' . esc_html($max) : '') . ' aangemeld';
+
+        echo '<summary style="cursor:pointer;font-size:16px;font-weight:600;">' . $summary . '</summary>';
+
+        echo '<div style="margin-top:10px;">';
+
+        if ($pretty) {
+            echo '<div><strong>Wanneer:</strong> ' . esc_html($pretty) . ($time ? ' om ' . esc_html($time) : '') . '</div>';
+        }
+
+        echo '<div><strong>Aanmeldingen:</strong> ' . esc_html($count) . ($max !== null ? ' / ' . esc_html($max) : '') . '</div>';
+
+        if ($expertise_counts) {
+            echo '<ul style="margin:6px 0 0 15px;">';
+            foreach ($expertise_counts as $exp) {
+                $free = max(0, (int) $exp->max_volunteers - (int) $exp->count);
+                echo '<li>' . esc_html($exp->name) . ': ' . esc_html($exp->count) . '/' . esc_html($exp->max_volunteers) . ' bezet, ' . esc_html($free) . ' vrij</li>';
+            }
+            echo '</ul>';
+        }
+
+        if (!$rows) {
+            echo '<div style="margin-top:8px;color:#666;">(Nog geen aanmeldingen)</div>';
+        } else {
+            echo '<ol style="margin-top:8px;">';
+            foreach ($rows as $r) {
+                $u = get_user_by('id', (int) $r->user_id);
+                if (!$u) continue;
+
+                $name  = $u->display_name ?: $u->user_login;
+                $email = $u->user_email ?: '';
+
+                $expertise = $wpdb->get_var($wpdb->prepare(
+                    "SELECT e.name
+                     FROM {$this->table_name()} s2
+                     LEFT JOIN {$wpdb->prefix}rcp_expertises e ON s2.expertise_id = e.id
+                     WHERE s2.user_id = %d AND s2.event_id = %d
+                     LIMIT 1",
+                    (int) $r->user_id,
+                    $event_id
+                ));
+
+                echo '<li>';
+                echo esc_html($name);
+
+                if ($expertise) {
+                    echo ' <span style="color:#666;">(' . esc_html($expertise) . ')</span>';
+                }
+
+                if ($email) {
+                    echo ' <span style="color:#666;">- ' . esc_html($email) . '</span>';
+                }
+
+                echo '</li>';
+            }
+            echo '</ol>';
+
+            if ($all_volunteers && !$is_past) {
+                echo '<div style="margin-top:14px;"><strong>Vrijwilligers beheren:</strong></div>';
+                echo '<ul style="margin-top:8px;">';
+
+                foreach ($all_volunteers as $volunteer) {
+                    $is_signed = $this->is_signed_up($event_id, $volunteer->ID);
+
+                    echo '<li style="margin-bottom:8px;">';
+                    echo esc_html($volunteer->display_name);
+
+                    if ($volunteer->user_email) {
+                        echo ' <span style="color:#666;">- ' . esc_html($volunteer->user_email) . '</span>';
                     }
 
-                    if ($email) {
-                        echo ' <span style="color:#666;">- ' . esc_html($email) . '</span>';
+                    echo ' ';
+
+                    if ($is_signed) {
+                        $url = wp_nonce_url(
+                            admin_url('edit.php?post_type=rc_event&page=rc_signups&rc_admin_action=unsubscribe_user&event_id=' . $event_id . '&user_id=' . $volunteer->ID),
+                            'rc_admin_unsubscribe_user_' . $event_id . '_' . $volunteer->ID
+                        );
+
+                        echo '<a href="' . esc_url($url) . '" class="button">Afmelden</a>';
+                    } else {
+                        $url = wp_nonce_url(
+                            admin_url('edit.php?post_type=rc_event&page=rc_signups&rc_admin_action=signup_user&event_id=' . $event_id . '&user_id=' . $volunteer->ID),
+                            'rc_admin_signup_user_' . $event_id . '_' . $volunteer->ID
+                        );
+
+                        echo '<a href="' . esc_url($url) . '" class="button button-primary">Aanmelden</a>';
                     }
 
                     echo '</li>';
                 }
 
-                    
-                echo '</ol>';
-if ($all_volunteers) {
-    echo '<div style="margin-top:14px;"><strong>Vrijwilligers beheren:</strong></div>';
-    echo '<ul style="margin-top:8px;">';
-
-    foreach ($all_volunteers as $volunteer) {
-        $is_signed = $this->is_signed_up($event_id, $volunteer->ID);
-
-        echo '<li style="margin-bottom:8px;">';
-        echo esc_html($volunteer->display_name);
-
-        if ($volunteer->user_email) {
-            echo ' <span style="color:#666;">- ' . esc_html($volunteer->user_email) . '</span>';
-        }
-
-        echo ' ';
-
-        if ($is_signed) {
-            $url = wp_nonce_url(
-                admin_url('edit.php?post_type=rc_event&page=rc_signups&rc_admin_action=unsubscribe_user&event_id=' . $event_id . '&user_id=' . $volunteer->ID),
-                'rc_admin_unsubscribe_user_' . $event_id . '_' . $volunteer->ID
-            );
-
-            echo '<a href="' . esc_url($url) . '" class="button">Afmelden</a>';
-        } else {
-            $url = wp_nonce_url(
-                admin_url('edit.php?post_type=rc_event&page=rc_signups&rc_admin_action=signup_user&event_id=' . $event_id . '&user_id=' . $volunteer->ID),
-                'rc_admin_signup_user_' . $event_id . '_' . $volunteer->ID
-            );
-
-            echo '<a href="' . esc_url($url) . '" class="button button-primary">Aanmelden</a>';
-        }
-
-        echo '</li>';
-    }
-
-    echo '</ul>';
-                
+                echo '</ul>';
             }
-
-            echo '</div>';
         }
 
-        echo '</div></div>';
-    }
+        echo '</div>';   // einde details-inhoud
+        echo '</details>';
     }
 public function add_back_button_to_event($content) {
 

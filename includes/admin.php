@@ -56,6 +56,60 @@ function rcp_admin_menu() {
         'repaircafe_email_lists',
         'repaircafe_admin_email_lists_page'
     );
+
+    add_submenu_page(
+        'edit.php?post_type=rc_event',
+        'Kadolijst',
+        'Kadolijst',
+        'manage_options',
+        'repaircafe_gift_list',
+        'repaircafe_admin_gift_list_page'
+    );
+}
+
+/**
+ * Exporteert de kadolijst als CSV, vóórdat er HTML wordt uitgestuurd.
+ *
+ * Doet:
+ * - controleert of dit de kadolijst-pagina is met exportverzoek
+ * - stuurt CSV-headers en de inhoud
+ * - stopt de verdere pagina-afhandeling
+ *
+ * In:
+ * - $_GET['page'], $_GET['rc_gift_export'], $_GET['rc_gift_year']
+ *
+ * Uit:
+ * - CSV-download, of niets als er geen exportverzoek is
+ */
+add_action('admin_init', 'rcp_maybe_export_gift_list');
+
+function rcp_maybe_export_gift_list() {
+
+    if ( ! isset($_GET['page']) || $_GET['page'] !== 'repaircafe_gift_list' ) {
+        return;
+    }
+
+    if ( ! isset($_GET['rc_gift_export']) || $_GET['rc_gift_export'] !== 'csv' ) {
+        return;
+    }
+
+    if ( ! current_user_can('manage_options') ) {
+        return;
+    }
+
+    $year = isset($_GET['rc_gift_year']) ? absint($_GET['rc_gift_year']) : (int) current_time('Y');
+    $rows = rcp_get_gift_list_volunteers($year);
+
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename=kadolijst-' . $year . '.csv');
+
+    $out = fopen('php://output', 'w');
+    fputcsv($out, array('Naam', 'E-mail', 'Aantal inschrijvingen'));
+    foreach ($rows as $r) {
+        fputcsv($out, array($r->naam, $r->email, $r->aantal));
+    }
+    fclose($out);
+    exit;
 }
 
 /*
@@ -691,6 +745,120 @@ function rcp_get_user_expertise_names_string($user_id) {
     }
 
     return implode(', ', $names);
+}
+
+/**
+ * Toont de beheerpagina voor de kadolijst.
+ *
+ * Doet:
+ * - controleert adminrechten
+ * - leest het gekozen jaar uit de URL (standaard huidig jaar)
+ * - haalt vrijwilligers op met minimaal 1 inschrijving dat jaar
+ * - toont jaarkeuze, totaal, CSV-exportknop en tabel
+ *
+ * In:
+ * - $_GET['rc_gift_year']
+ *
+ * Uit:
+ * - HTML
+ */
+function repaircafe_admin_gift_list_page() {
+
+    if ( ! current_user_can('manage_options') ) {
+        return;
+    }
+
+    $year = isset($_GET['rc_gift_year']) ? absint($_GET['rc_gift_year']) : (int) current_time('Y');
+    if ( $year < 2000 || $year > 2100 ) {
+        $year = (int) current_time('Y');
+    }
+
+    $volunteers = rcp_get_gift_list_volunteers($year);
+    $total      = count($volunteers);
+
+    echo '<div class="wrap">';
+    echo '<h1>Kadolijst vrijwilligers</h1>';
+
+    echo '<form method="get" style="margin:20px 0;">';
+    echo '<input type="hidden" name="post_type" value="rc_event">';
+    echo '<input type="hidden" name="page" value="repaircafe_gift_list">';
+    echo '<table class="form-table"><tr>';
+    echo '<th scope="row"><label for="rc_gift_year">Jaar</label></th>';
+    echo '<td>';
+    echo '<input type="number" id="rc_gift_year" name="rc_gift_year" value="' . esc_attr($year) . '" min="2000" max="2100" class="small-text">';
+    echo ' <button type="submit" class="button button-primary">Tonen</button>';
+    echo '</td></tr></table>';
+    echo '</form>';
+
+    echo '<p style="font-size:16px;"><strong>Aantal vrijwilligers in ' . esc_html($year) . ':</strong> ' . esc_html($total) . ' &mdash; bestel gerust een paar extra.</p>';
+
+    $export_url = add_query_arg(
+        array(
+            'post_type'      => 'rc_event',
+            'page'           => 'repaircafe_gift_list',
+            'rc_gift_year'   => $year,
+            'rc_gift_export' => 'csv',
+        ),
+        admin_url('edit.php')
+    );
+    echo '<p><a href="' . esc_url($export_url) . '" class="button">Exporteer CSV</a></p>';
+
+    if ( empty($volunteers) ) {
+        echo '<p>Geen vrijwilligers gevonden voor dit jaar.</p>';
+    } else {
+        echo '<table class="widefat striped" style="max-width:800px;">';
+        echo '<thead><tr><th>Naam</th><th>E-mail</th><th>Aantal inschrijvingen</th></tr></thead>';
+        echo '<tbody>';
+        foreach ($volunteers as $v) {
+            echo '<tr>';
+            echo '<td>' . esc_html($v->naam) . '</td>';
+            echo '<td>' . esc_html($v->email) . '</td>';
+            echo '<td>' . esc_html($v->aantal) . '</td>';
+            echo '</tr>';
+        }
+        echo '</tbody></table>';
+    }
+
+    echo '</div>';
+}
+
+/**
+ * Haalt vrijwilligers op met minimaal 1 inschrijving in een gekozen jaar.
+ *
+ * Doet:
+ * - koppelt inschrijvingen aan de eventdatum (post-meta _rc_event_date)
+ * - filtert op events waarvan de datum in het gekozen jaar valt
+ * - telt per vrijwilliger het aantal unieke inschrijvingen
+ *
+ * In:
+ * - $year: jaartal (int)
+ *
+ * Uit:
+ * - array met objecten (naam, email, aantal)
+ */
+function rcp_get_gift_list_volunteers($year) {
+    global $wpdb;
+
+    $year          = (int) $year;
+    $signups_table = $wpdb->prefix . 'rc_signups';
+
+    return $wpdb->get_results(
+        $wpdb->prepare(
+            "
+            SELECT u.display_name AS naam, u.user_email AS email,
+                   COUNT(DISTINCT s.event_id) AS aantal
+            FROM $signups_table s
+            INNER JOIN {$wpdb->users} u ON u.ID = s.user_id
+            INNER JOIN {$wpdb->postmeta} pm ON pm.post_id = s.event_id
+                AND pm.meta_key = '_rc_event_date'
+            WHERE pm.meta_value BETWEEN %s AND %s
+            GROUP BY u.ID
+            ORDER BY naam ASC
+            ",
+            $year . '-01-01',
+            $year . '-12-31'
+        )
+    );
 }
 
 /*
